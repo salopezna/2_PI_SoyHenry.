@@ -23,16 +23,16 @@ mvp_pi2/
 │
 ├── notebooks/                   
 │   └── eda_notebook.ipynb       
+│   └── etl_notebook.ipynb       
 │
-├── src/                         
+├── services/                         
 │   ├── __init__.py              
 │   ├── etl.py                   
 │   ├── api.py                   
-│   ├── recommendation.py        
 │   └── validation.py            
 │
 ├── tests/                       
-│   └── test_api.py              
+│   └── test.py              
 │
 ├── requirements.txt             
 ├── README.md                    
