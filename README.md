@@ -18,47 +18,47 @@ Si en **Jupyter Notebook** no se ve bien por los emojis o la alineación:
 
 mi_proyecto/
 │
-├── 📁 data/                  # 📂 Datos crudos y procesados
-│   ├── 📁 raw/              # 📄 Datos originales (sin modificar)
-│   ├── 📁 processed/        # 📄 Datos limpios y listos para análisis
-│   └── 📁 external/         # 📄 Datos externos o de terceros
+├── 📁 data/                    # 📂 Datos crudos y procesados
+│   ├── 📁 raw/                 # 📄 Datos originales (sin modificar)
+│   ├── 📁 processed/           # 📄 Datos limpios y listos para análisis
+│   └── 📁 external/            # 📄 Datos externos o de terceros
 │
-├── 📁 notebooks/             # 📔 Notebooks de análisis exploratorio (EDA)
-│   └── 01_EDA.ipynb         # 📊 Análisis exploratorio inicial
+├── 📁 notebooks/               # 📔 Notebooks de análisis exploratorio (EDA)
+│   └── 01_EDA.ipynb            # 📊 Análisis exploratorio inicial
 │
-├── 📁 src/                   # 🐍 Código fuente del proyecto
-│   ├── 📁 data/             # 📁 Carga y transformación de datos
-│   │   └── make_dataset.py  # 📄 Funciones para cargar y limpiar datos
+├── 📁 src/                     # 🐍 Código fuente del proyecto
+│   ├── 📁 data/                # 📁 Carga y transformación de datos
+│   │   └── make_dataset.py     # 📄 Funciones para cargar y limpiar datos
 │   │
-│   ├── 📁 features/         # ⚙️  Ingeniería de características
-│   │   └── build_features.py # 📄 Creación y selección de variables
+│   ├── 📁 features/            # ⚙️  Ingeniería de características
+│   │   └── build_features.py   # 📄 Creación y selección de variables
 │   │
-│   ├── 📁 models/           # 🤖 Entrenamiento y evaluación de modelos
-│   │   ├── train_model.py   # 📄 Entrenamiento del modelo
-│   │   └── evaluate_model.py # 📄 Evaluación del modelo
+│   ├── 📁 models/              # 🤖 Entrenamiento y evaluación de modelos
+│   │   ├── train_model.py      # 📄 Entrenamiento del modelo
+│   │   └── evaluate_model.py   # 📄 Evaluación del modelo
 │   │
-│   ├── 📁 visualization/    # 📊 Visualización de datos y resultados
-│   │   └── visualize.py     # 📄 Funciones para gráficos y dashboards
+│   ├── 📁 visualization/       # 📊 Visualización de datos y resultados
+│   │   └── visualize.py        # 📄 Funciones para gráficos y dashboards
 │   │
-│   └── 📁 utils/            # 🛠️  Funciones y utilidades generales
-│       └── helpers.py       # 📄 Funciones auxiliares reutilizables
+│   └── 📁 utils/               # 🛠️  Funciones y utilidades generales
+│       └── helpers.py          # 📄 Funciones auxiliares reutilizables
 │
-├── 📁 models/                # 🧠 Modelos entrenados y artefactos serializados
-│   └── modelo_final.pkl     # 💾 Modelo entrenado
+├── 📁 models/                  # 🧠 Modelos entrenados y artefactos serializados
+│   └── modelo_final.pkl        # 💾 Modelo entrenado
 │
-├── 📁 reports/               # 📝 Reportes y resultados del proyecto
-│   └── 📁 figures/          # 📊 Gráficos y visualizaciones
+├── 📁 reports/                 # 📝 Reportes y resultados del proyecto
+│   └── 📁 figures/             # 📊 Gráficos y visualizaciones
 │
-├── 📁 tests/                 # 🧪 Pruebas unitarias del código
+├── 📁 tests/                   # 🧪 Pruebas unitarias del código
 │   └── test_data.py
 │
-├── 📁 docs/                  # 📖 Documentación adicional
+├── 📁 docs/                    # 📖 Documentación adicional
 │
-├── requirements.txt          # 📋 Lista de dependencias
-├── environment.yml           # 📋 Configuración del entorno Conda (opcional)
-├── .gitignore                # 🚫 Archivos/carpetas a ignorar en Git
-├── README.md                 # 📖 Descripción general del proyecto
-└── main.py                   # 🏁 Script principal para ejecutar el pipeline
+├── requirements.txt            # 📋 Lista de dependencias
+├── environment.yml             # 📋 Configuración del entorno Conda (opcional)
+├── .gitignore                  # 🚫 Archivos/carpetas a ignorar en Git
+├── README.md                   # 📖 Descripción general del proyecto
+└── main.py                     # 🏁 Script principal para ejecutar el pipeline
 
 
 
