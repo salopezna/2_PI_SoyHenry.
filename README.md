@@ -24,24 +24,14 @@ mi_proyecto/
 │   └── 📁 external/            # 📄 Datos externos o de terceros
 │
 ├── 📁 notebooks/               # 📔 Notebooks de análisis exploratorio (EDA)
-│   └── 01_EDA.ipynb            # 📊 Análisis exploratorio inicial
+│   └── 01_ETL.ipynb            # 📊 Exploración, Transformación y Carga inicial
+│   └── 02_EDA.ipynb            # 📊 Análisis exploratorio inicial
 │
 ├── 📁 src/                     # 🐍 Código fuente del proyecto
-│   ├── 📁 data/                # 📁 Carga y transformación de datos
-│   │   └── make_dataset.py     # 📄 Funciones para cargar y limpiar datos
-│   │
-│   ├── 📁 features/            # ⚙️  Ingeniería de características
-│   │   └── build_features.py   # 📄 Creación y selección de variables
-│   │
-│   ├── 📁 models/              # 🤖 Entrenamiento y evaluación de modelos
-│   │   ├── train_model.py      # 📄 Entrenamiento del modelo
-│   │   └── evaluate_model.py   # 📄 Evaluación del modelo
-│   │
-│   ├── 📁 visualization/       # 📊 Visualización de datos y resultados
-│   │   └── visualize.py        # 📄 Funciones para gráficos y dashboards
-│   │
-│   └── 📁 utils/               # 🛠️  Funciones y utilidades generales
-│       └── helpers.py          # 📄 Funciones auxiliares reutilizables
+│   └── preprocess_data.py      # 📄 Funciones para cargar, transformación y limpieza de datos
+│   └── build_features.py       # 📄 Creación y selección de variables
+│   ├── evatrain_model.py       # 📄 Evaluación y Entrenamiento del modelo
+│   └── visualize.py            # 📄 Funciones para visualización de gráficos y dashboards
 │
 ├── 📁 models/                  # 🧠 Modelos entrenados y artefactos serializados
 │   └── modelo_final.pkl        # 💾 Modelo entrenado

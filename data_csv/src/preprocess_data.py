@@ -3,7 +3,17 @@ import numpy as np
 import ast
 from datetime import datetime
 
-
+def load_excel_sheets(file_path):
+    """
+    Carga un archivo Excel y devuelve un diccionario con los nombres de las hojas y sus respectivos dataframes.
+    """
+    try:
+        # Cargar todas las hojas en un diccionario
+        sheets = pd.read_excel(file_path, sheet_name=None, engine="openpyxl")
+        return sheets
+    except Exception as e:
+        print(f"Error al cargar el archivo: {e}")
+        return {}
 
 # Función para validar un DataFrame, generando un resumen con información relevante de cada columna.
 def validar_df(df):
