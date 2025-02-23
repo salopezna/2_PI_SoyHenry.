@@ -105,3 +105,5 @@ def convertir_a_estructura(valor, tipo_esperado):
         return valor  # Si ya es list o dict, lo devuelve tal cual
     except (ValueError, SyntaxError):
         return None
+    
+    
