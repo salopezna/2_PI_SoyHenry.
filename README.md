@@ -23,9 +23,8 @@ mi_proyecto/
 │   ├── 📁 processed/           # 📄 Datos limpios y listos para análisis
 │   └── 📁 external/            # 📄 Datos externos o de terceros
 │
-├── 📁 notebooks/               # 📔 Notebooks de análisis exploratorio (EDA)
-│   └── 01_ETL.ipynb            # 📊 Exploración, Transformación y Carga inicial
-│   └── 02_EDA.ipynb            # 📊 Análisis exploratorio inicial
+├── 01_ETL.ipynb            # 📊 Notebook para Exploración, Transformación y Carga inicial
+├── 02_EDA.ipynb            # 📊 Notebook para Análisis exploratorio inicial   └── 02_EDA.ipynb            
 │
 ├── 📁 src/                     # 🐍 Código fuente del proyecto
 │   └── preprocess_data.py      # 📄 Funciones para cargar, transformación y limpieza de datos
