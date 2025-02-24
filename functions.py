@@ -3,6 +3,25 @@ import numpy as np
 import ast
 from datetime import datetime
 
+def renombrar_campos(df_dict, nuevos_nombres):
+    """
+    Renombra columnas de las hojas contenidas en df_dict según los renombramientos definidos en nuevos_nombres.
+    
+    Parámetros:
+      - df_dict (dict): Diccionario donde cada clave es el nombre de la hoja y cada valor es un DataFrame.
+      - nuevos_nombres (dict): Diccionario de mapeo, donde cada clave es el nombre de la hoja y el valor 
+                         es otro diccionario con el mapeo de columnas (llave: nombre original, valor: nuevo nombre).
+                         
+    Retorna:
+      dict: El mismo diccionario df_dict, con las hojas que se encuentran en nuevos_nombres renombradas según lo indicado.
+    """
+    for hoja, mapping in nuevos_nombres.items():
+        if hoja in df_dict:
+            df_dict[hoja] = df_dict[hoja].rename(columns=mapping)
+        else:
+            print(f"La hoja '{hoja}' no se encontró en el diccionario.")
+    return df_dict
+
 def load_excel_sheets(file_path):
     """
     Carga un archivo Excel y devuelve un diccionario con los nombres de las hojas y sus respectivos dataframes.
