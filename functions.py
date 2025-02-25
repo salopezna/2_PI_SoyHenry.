@@ -116,6 +116,112 @@ def obtener_hojas_validas(lista_campos, df_dict, hojas_excluir=None):
     
     return hojas_validas
 
+# Función para fusionar dataframes incluidos en un listado y que se guian por un campo id en comun:
+"""def fusionar_por_campo(campo_id, lista_hojas, df_dict):
+    
+    Fusiona (merge) las hojas especificadas en 'lista_hojas' usando el campo único 'campo_id' como llave de unión.
+    
+    Parámetros:
+      - campo_id (str): Nombre del campo que se usará como llave para realizar la fusión entre DataFrames 
+                        (por ejemplo, "id_año_trimestre").
+      - lista_hojas (list): Lista de nombres (strings) de las hojas (o claves) a fusionar.
+      - df_dict (dict): Diccionario que contiene los DataFrames, donde la clave es el nombre de la hoja y el valor es el DataFrame.
+      
+    Retorna:
+      DataFrame: Resultado de la fusión externa (outer join) de los DataFrames que cumplen con las condiciones.
+    
+    # Inicializa la variable que contendrá el DataFrame fusionado.
+    df_fusionado = None
+    
+    # Recorre cada hoja en la lista proporcionada.
+    for hoja in lista_hojas:
+        # Verifica si la hoja se encuentra en el diccionario; si no, la omite.
+        if hoja not in df_dict:
+            print(f"La hoja '{hoja}' no se encuentra en el diccionario. Se omite.")
+            continue
+        
+        # Obtiene el DataFrame correspondiente a la hoja.
+        df = df_dict[hoja]
+        
+        # Verifica que el DataFrame contenga el campo clave indicado; de lo contrario, la omite.
+        if campo_id not in df.columns:
+            print(f"La hoja '{hoja}' no contiene el campo '{campo_id}'. Se omite.")
+            continue
+        
+        # Si es el primer DataFrame válido, lo copia en df_fusionado.
+        if df_fusionado is None:
+            df_fusionado = df.copy()
+        else:
+            # Para los siguientes DataFrames, realiza una fusión externa usando el campo clave.
+            # La opción suffixes=('', '_dup') se utiliza para agregar un sufijo a las columnas duplicadas.
+            df_fusionado = pd.merge(df_fusionado, df, on=campo_id, how='outer', suffixes=('', '_dup'))
+    
+    # Si no se fusionó ningún DataFrame (ninguna hoja era válida), se retorna un DataFrame vacío.
+    if df_fusionado is None:
+        return pd.DataFrame()
+    
+    # Retorna el DataFrame fusionado resultante.
+    return df_fusionado"""
+
+
+
+def fusionar_por_campos(campo_id, lista_hojas, df_dict):
+    """
+    Fusiona (merge) las hojas indicadas en 'lista_hojas' usando los campos en 'campo_id'
+    como llaves para la unión a nivel de cada fila.
+    
+    Para cada DataFrame en la lista, se verifica que contenga todos los campos indicados en 
+    'campo_id'. Luego, se fusionan los DataFrames mediante un outer join, de modo que se combinan 
+    aquellas filas donde el valor de cada campo en 'campo_id' coincide en ambos DataFrames.
+    
+    Por ejemplo, si 'campo_id' es ["Año", "Trimestre"] y se tienen tres DataFrames que incluyen una fila 
+    con Año = 2024 y Trimestre = 3, entonces las filas correspondientes a esos valores se fusionarán en 
+    una única fila, combinando la información de las hojas involucradas.
+    
+    Parámetros:
+      - campo_id (list): Lista de nombres de campos que se utilizarán como llaves para la fusión 
+                         (por ejemplo, ["Año", "Trimestre"]).
+      - lista_hojas (list): Lista de nombres (strings) de las hojas (claves) a fusionar.
+      - df_dict (dict): Diccionario que contiene los DataFrames, donde la clave es el nombre de la hoja 
+                        y el valor es el DataFrame.
+      
+    Retorna:
+      DataFrame: Resultado de la fusión externa (outer join) de los DataFrames, combinando las filas 
+                 donde los valores de los campos en 'campo_id' coinciden.
+    """
+    df_fusionado = None
+
+    for hoja in lista_hojas:
+        # Verifica si la hoja se encuentra en el diccionario; si no, la omite.
+        if hoja not in df_dict:
+            print(f"La hoja '{hoja}' no se encuentra en el diccionario. Se omite.")
+            continue
+
+        # Obtiene el DataFrame correspondiente a la hoja.
+        df = df_dict[hoja]
+
+        # Verifica que el DataFrame contenga todos los campos indicados en 'campo_id'.
+        if not all(campo in df.columns for campo in campo_id):
+            print(f"La hoja '{hoja}' no contiene alguno de los campos {campo_id}. Se omite.")
+            continue
+
+        # Si es el primer DataFrame válido, lo copia en df_fusionado.
+        if df_fusionado is None:
+            df_fusionado = df.copy()
+        else:
+            # Fusiona el DataFrame actual con el acumulado usando un outer join.
+            # Esto combina las filas donde los valores en los campos de 'campo_id' coinciden.
+            df_fusionado = pd.merge(df_fusionado, df, on=campo_id, how='outer', suffixes=('', '_dup'))
+
+    # Si no se fusionó ningún DataFrame, retorna un DataFrame vacío.
+    if df_fusionado is None:
+        return pd.DataFrame()
+    
+    return df_fusionado
+
+
+
+
 
 # Función para convertir los tipos de datos de las columnas de un DataFrame según un diccionario de tipos.
 def convertir_tipos(df, diccionario):
