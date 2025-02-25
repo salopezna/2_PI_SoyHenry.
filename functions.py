@@ -3,7 +3,7 @@ import numpy as np
 import ast
 from datetime import datetime
 
-def opciones_print(width=1000, expand=False, max_columns=None):
+def opciones_impresion(width=1000, expand=False, max_columns=None):
     """
     Configura las opciones de visualización de Pandas para imprimir DataFrames.
 
@@ -48,16 +48,7 @@ def load_excel_sheets(file_path):
         return {}
 
 # Función para validar un DataFrame, generando un resumen con información relevante de cada columna.
-def validar_df(df):
-    """
-    Valida un DataFrame, generando un resumen con información relevante de cada columna.
-    Parámetros:
-    ------------
-    df : pd.DataFrame - DataFrame a validar.
-    Retorno:
-    ---------
-    pd.DataFrame - Resumen con información relevante de cada columna.
-    """
+"""def validar_df(df):
     res = pd.DataFrame({
         "Tipo de Dato": df.dtypes,
         "Valores No Nulos": df.count(),
@@ -69,7 +60,62 @@ def validar_df(df):
         "valores_negativos": (df.select_dtypes(include=['int64', 'float64']) < 0).sum()
     })
     res = res.reindex(df.columns)
+    return res"""
+
+def validar_df(df):
+    """
+    Valida un DataFrame, generando un resumen con información relevante de cada columna.
+    Se omite la reindexación para evitar errores con etiquetas duplicadas.
+    """
+    res = pd.DataFrame({
+        "Tipo de Dato": df.dtypes,
+        "Valores No Nulos": df.count(),
+        "Valores Nulos": df.isna().sum(),
+        "Valores Únicos": df.astype(str).nunique(dropna=True),
+        "Valores Cero": (df == 0).sum(),
+        "Inconsistentes ('?')": df.isin(['?']).sum(),
+        "Valores Vacíos (string)": df.isin(["", " ", "NA", "NULL", "None"]).sum(),
+        "valores_negativos": (df.select_dtypes(include=['int64', 'float64']) < 0).sum()
+    })
     return res
+
+# Función para obtener las hojas que contienen todos los campos indicados en 'lista_campos' y sus dimensiones.
+def obtener_hojas_validas(lista_campos, df_dict, hojas_excluir=None):
+    """
+    Valida y crea una lista de hojas que contienen todos los campos indicados en 'lista_campos'.
+    
+    Parámetros:
+      - lista_campos (list): Lista de nombres de campos requeridos.
+      - df_dict (dict): Diccionario con DataFrames (clave: nombre de la hoja, valor: DataFrame).
+      - hojas_excluir (list): Lista de nombres de hojas a excluir de la validación. 
+                              Esta lista puede contener strings o tuplas donde el primer elemento es el nombre.
+    
+    Retorna:
+      - list: Lista de tuplas (nombre de hoja, dimensionalidad) para las hojas que cumplen con tener todos los campos requeridos.
+    """
+    if hojas_excluir is None:
+        hojas_excluir = []
+    
+    # Asegurarse de que la lista de exclusión sea solo de nombres (strings)
+    hojas_excluir_nombres = []
+    for item in hojas_excluir:
+        if isinstance(item, tuple):
+            hojas_excluir_nombres.append(item[0])
+        else:
+            hojas_excluir_nombres.append(item)
+    
+    hojas_validas = []
+    for hoja, df in df_dict.items():
+        # Si la hoja ya está en la lista de exclusión, la omitimos.
+        if hoja in hojas_excluir_nombres:
+            continue
+        
+        # Verificamos que la hoja contenga todos los campos requeridos.
+        if all(campo in df.columns for campo in lista_campos):
+            hojas_validas.append((hoja, df.shape))
+    
+    return hojas_validas
+
 
 # Función para convertir los tipos de datos de las columnas de un DataFrame según un diccionario de tipos.
 def convertir_tipos(df, diccionario):
