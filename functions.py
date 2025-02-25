@@ -62,11 +62,11 @@ def load_excel_sheets(file_path):
     res = res.reindex(df.columns)
     return res"""
 
-def validar_df(df):
-    """
+"""def validar_df(df):
+    
     Valida un DataFrame, generando un resumen con información relevante de cada columna.
     Se omite la reindexación para evitar errores con etiquetas duplicadas.
-    """
+    
     res = pd.DataFrame({
         "Tipo de Dato": df.dtypes,
         "Valores No Nulos": df.count(),
@@ -77,7 +77,118 @@ def validar_df(df):
         "Valores Vacíos (string)": df.isin(["", " ", "NA", "NULL", "None"]).sum(),
         "valores_negativos": (df.select_dtypes(include=['int64', 'float64']) < 0).sum()
     })
-    return res
+    return res"""
+
+
+#######################################################
+# Funciones para validar DataFrames
+#######################################################
+
+import pandas as pd
+import numpy as np
+import datetime
+
+def validar_df(df):
+    """
+    Valida un DataFrame generando un resumen con información clave de cada columna.
+    
+    Para cada columna se calcula:
+      - Tipo de Dato
+      - Int: Cantidad de valores no nulos de tipo int.
+      - Float: Cantidad de valores no nulos de tipo float.
+      - Bool: Cantidad de valores no nulos de tipo bool.
+      - DateT: Cantidad de valores no nulos de tipo datetime (pd.Timestamp o datetime.datetime).
+      - Str: Cantidad de valores no nulos de tipo str.
+      - Ctgory: Cantidad de valores no nulos en columnas categóricas (si la columna es de tipo category).
+      - Val_No_Nulos: Número de valores no nulos.
+      - Val_Nulos: Número de valores nulos.
+      - Val_Únicos: Número de valores únicos (tras convertir a str).
+      - Val_Cero: Conteo de valores iguales a cero (solo para columnas numéricas).
+      - Val_Vacíos (string): Conteo de valores vacíos o equivalentes ("" o "NA", "NULL", "None") en columnas de texto.
+      - Media, Desviación_Std, Mínimo, Q1_25%, Q2_50% (Mediana), Q3_75%, Máximo, Negativos: Estadísticas numéricas para columnas numéricas 
+        (NaN en otros casos).
+      
+    Retorna:
+      pd.DataFrame: Un resumen transpuesto, donde cada fila corresponde a una columna del DataFrame original.
+    """
+    summary = {}
+    
+    for col in df.columns:
+        s = df[col]
+        # Si 's' es un DataFrame (lo que puede ocurrir si el nombre de la columna está duplicado),
+        # tomamos la primera columna.
+        if isinstance(s, pd.DataFrame):
+            print(f"Advertencia: La columna '{col}' aparece duplicada. Se usará la primera aparición.")
+            s = s.iloc[:, 0]
+        
+        # Tipo de dato de la columna.
+        tipo = s.dtype
+        
+        # Conteo de valores no nulos y nulos.
+        val_no_nulos = s.count()
+        val_nulos = s.isna().sum()
+        
+        # Número de valores únicos (tras convertir a str para homogeneizar).
+        val_unicos = s.astype(str).nunique(dropna=True)
+        
+        # Conteo de ceros (solo para columnas numéricas).
+        val_cero = (s == 0).sum() if pd.api.types.is_numeric_dtype(s) else np.nan
+        
+        # Conteo de valores vacíos en columnas de texto.
+        if pd.api.types.is_string_dtype(s):
+            val_vacios = s.apply(lambda x: x.strip() if isinstance(x, str) else x).isin(["", "NA", "NULL", "None"]).sum()
+        else:
+            val_vacios = np.nan
+        
+        # Conteo de tipos en los valores no nulos.
+        count_int = sum(isinstance(x, int) for x in s.dropna())
+        count_float = sum(isinstance(x, float) for x in s.dropna())
+        count_bool = sum(isinstance(x, bool) for x in s.dropna())
+        count_datetime = sum(isinstance(x, (pd.Timestamp, datetime.datetime)) for x in s.dropna())
+        count_str = sum(isinstance(x, str) for x in s.dropna())
+        count_category = s.dropna().shape[0] if pd.api.types.is_categorical_dtype(s) else np.nan
+        
+        # Estadísticas numéricas (solo para columnas numéricas)
+        if pd.api.types.is_numeric_dtype(s):
+            media = s.mean()
+            std = s.std()
+            minimo = s.min()
+            q1 = s.quantile(0.25)
+            mediana = s.median()
+            q3 = s.quantile(0.75)
+            maximo = s.max()
+            negativos = (s < 0).sum()
+        else:
+            media = std = minimo = q1 = mediana = q3 = maximo = negativos = np.nan
+        
+        summary[col] = {
+            "Tipo de Dato": tipo,
+            "Int": count_int,
+            "Float": count_float,
+            "Bool": count_bool,
+            "DateT": count_datetime,
+            "Str": count_str,
+            "Ctgory": count_category,
+            "No_Nulos": val_no_nulos,
+            "Nulos": val_nulos,
+            "Únicos": val_unicos,
+            "Ceros": val_cero,
+            "Vacíos (string)": val_vacios,
+            "Media": media,
+            "Desvi_Std": std,
+            "Mínimo": minimo,
+            "Q1_25%": q1,
+            "Q2_50%": mediana,
+            "Q3_75%": q3,
+            "Máximo": maximo,
+            "Negativos": negativos
+        }
+    
+    return pd.DataFrame(summary).T
+
+#######################################################
+
+
 
 # Función para obtener las hojas que contienen todos los campos indicados en 'lista_campos' y sus dimensiones.
 def obtener_hojas_validas(lista_campos, df_dict, hojas_excluir=None):
