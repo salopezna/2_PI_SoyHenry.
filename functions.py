@@ -87,7 +87,113 @@ def load_excel_sheets(file_path):
 import pandas as pd
 import numpy as np
 import datetime
+import ast
 
+def validar_df(df):
+    """
+    Valida un DataFrame generando un resumen con información clave de cada columna.
+    
+    Para cada columna se calcula:
+      - Tipo de Dato
+      - Int: Cantidad de valores no nulos que sean de tipo entero (usando isinstance(x, int)).
+      - Int64: Conteo de valores no nulos si la columna tiene dtype "Int64" (tipo entero nullable de pandas).
+      - Float: Cantidad de valores no nulos de tipo float.
+      - Bool: Cantidad de valores no nulos de tipo bool.
+      - DateT: Cantidad de valores no nulos de tipo datetime (pd.Timestamp o datetime.datetime).
+      - Str: Cantidad de valores no nulos de tipo str.
+      - Ctgory: Cantidad de valores no nulos en columnas categóricas (si la columna es de tipo category).
+      - No_Nulos: Número de valores no nulos.
+      - Nulos: Número de valores nulos.
+      - Únicos: Número de valores únicos (tras convertir a str).
+      - Ceros: Conteo de valores iguales a cero (solo para columnas numéricas).
+      - Vacíos (string): Conteo de valores vacíos o equivalentes ("" o "NA", "NULL", "None") en columnas de texto.
+      - Media, Desviación_Std, Mínimo, Q1_25%, Q2_50% (Mediana), Q3_75%, Máximo, Negativos: Estadísticas numéricas para columnas numéricas 
+        (NaN en otros casos).
+      
+    Retorna:
+      pd.DataFrame: Un resumen transpuesto, donde cada fila corresponde a una columna del DataFrame original.
+    """
+    summary = {}
+    
+    for col in df.columns:
+        s = df[col]
+        # Si 's' es un DataFrame (por nombres duplicados), tomamos la primera columna.
+        if isinstance(s, pd.DataFrame):
+            print(f"Advertencia: La columna '{col}' aparece duplicada. Se usará la primera aparición.")
+            s = s.iloc[:, 0]
+        
+        # Tipo de dato de la columna.
+        tipo = s.dtype
+        
+        # Conteo de valores no nulos y nulos.
+        val_no_nulos = s.count()
+        val_nulos = s.isna().sum()
+        
+        # Número de valores únicos (tras convertir a str para homogeneizar).
+        val_unicos = s.astype(str).nunique(dropna=True)
+        
+        # Conteo de ceros (solo para columnas numéricas).
+        val_cero = (s == 0).sum() if pd.api.types.is_numeric_dtype(s) else np.nan
+        
+        # Conteo de valores vacíos en columnas de texto.
+        if pd.api.types.is_string_dtype(s):
+            val_vacios = s.apply(lambda x: x.strip() if isinstance(x, str) else x).isin(["", "NA", "NULL", "None"]).sum()
+        else:
+            val_vacios = np.nan
+        
+        # Conteo de tipos en los valores no nulos.
+        # Usamos np.issubdtype para detectar valores de tipo entero o flotante
+        count_int = sum(isinstance(x, int) for x in s.dropna())
+        count_float = sum(isinstance(x, float) for x in s.dropna())
+        count_bool = sum(isinstance(x, bool) for x in s.dropna())
+        count_datetime = sum(isinstance(x, (pd.Timestamp, datetime.datetime)) for x in s.dropna())
+        count_str = sum(isinstance(x, str) for x in s.dropna())
+        count_category = s.dropna().shape[0] if pd.api.types.is_categorical_dtype(s) else np.nan
+        
+        # Nuevo campo: conteo de valores enteros de tipo "Int64"
+        # Se verifica si la columna tiene dtype "Int64" (el tipo nullable de pandas)
+        count_int64 = s.dropna().shape[0] if s.dtype.name == "Int64" else 0
+        
+        # Estadísticas numéricas (solo para columnas numéricas)
+        if pd.api.types.is_numeric_dtype(s):
+            media = s.mean()
+            std = s.std()
+            minimo = s.min()
+            q1 = s.quantile(0.25)
+            mediana = s.median()
+            q3 = s.quantile(0.75)
+            maximo = s.max()
+            negativos = (s < 0).sum()
+        else:
+            media = std = minimo = q1 = mediana = q3 = maximo = negativos = np.nan
+        
+        summary[col] = {
+            "Tipo de Dato": tipo,
+            "Int": count_int,
+            "Int64": count_int64,
+            "Float": count_float,
+            "Bool": count_bool,
+            "DateT": count_datetime,
+            "Str": count_str,
+            "Ctgory": count_category,
+            "No_Nulos": val_no_nulos,
+            "Nulos": val_nulos,
+            "Únicos": val_unicos,
+            "Ceros": val_cero,
+            "Vacíos (string)": val_vacios,
+            "Media": media,
+            "Desviación_Std": std,
+            "Mínimo": minimo,
+            "Q1_25%": q1,
+            "Q2_50%": mediana,
+            "Q3_75%": q3,
+            "Máximo": maximo,
+            "Negativos": negativos
+        }
+    
+    return pd.DataFrame(summary).T
+
+'''
 def validar_df(df):
     """
     Valida un DataFrame generando un resumen con información clave de cada columna.
@@ -185,7 +291,7 @@ def validar_df(df):
         }
     
     return pd.DataFrame(summary).T
-
+'''
 #######################################################
 
 
@@ -274,7 +380,60 @@ def obtener_hojas_validas(lista_campos, df_dict, hojas_excluir=None):
     # Retorna el DataFrame fusionado resultante.
     return df_fusionado"""
 
+######################################################
+# Función para validar y contar datos en campos especificos de un df:
+import pandas as pd
 
+def datos_unicos_hoja(item, campos):
+    """
+    Extrae los valores únicos de las columnas especificadas en 'campos' a partir de un item, y también
+    cuenta cuántas veces aparece cada valor único. El parámetro 'item' es una tupla (sheet_name, data),
+    donde data puede ser un DataFrame o un diccionario de DataFrames.
+    
+    Parámetros:
+      - item (tuple): Una tupla (sheet_name, data) donde:
+             * sheet_name (str): El nombre de la hoja.
+             * data: Puede ser un DataFrame o un diccionario de DataFrames.
+      - campos (dict): Diccionario donde cada clave es el nombre de la columna y el valor es 1 (imprimir)
+                       o 0 (no imprimir) la información.
+    
+    Retorna:
+      dict: Un diccionario donde cada clave es el nombre del campo y el valor es una tupla:
+            (lista ordenada de valores únicos, diccionario de conteo de cada valor).
+            Para columnas numéricas, se convierten los valores a enteros; de lo contrario, a cadenas.
+    """
+    sheet_name, data = item
+    # Si data es un diccionario, extrae el DataFrame correspondiente a sheet_name.
+    if isinstance(data, dict):
+        if sheet_name in data:
+            df = data[sheet_name]
+        else:
+            raise KeyError(f"El diccionario no contiene la hoja '{sheet_name}'")
+    else:
+        df = data
+
+    result = {}
+    for campo, imprimir_flag in campos.items():
+        if campo in df.columns:
+            # Convertir valores y obtener conteo
+            if pd.api.types.is_numeric_dtype(df[campo]):
+                # Para valores numéricos, convertir a int
+                valores = sorted([int(x) for x in df[campo].dropna().unique()])
+                # Obtenemos los conteos, convirtiendo las claves a int
+                counts = {int(k): v for k, v in df[campo].dropna().value_counts().items()}
+            else:
+                valores = sorted([str(x) for x in df[campo].dropna().unique()])
+                counts = {str(k): v for k, v in df[campo].dropna().value_counts().items()}
+            result[campo] = (valores, counts)
+            if imprimir_flag == 1:
+                print(f"En la hoja '{sheet_name}', el campo {campo} tiene {len(valores)} valores únicos y son:\n{counts}\n")
+        else:
+            result[campo] = ([], {})
+            if imprimir_flag == 1:
+                print(f"En la hoja '{sheet_name}', el campo {campo} no se encuentra en el DataFrame.\n")
+    return result
+
+#######################################################
 
 def fusionar_por_campos(campo_id, lista_hojas, df_dict):
     """
