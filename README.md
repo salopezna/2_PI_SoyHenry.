@@ -72,10 +72,13 @@ mvp_pi2/
 ├── .gitignore                  # 🚫 Archivos/carpetas a ignorar en Git
 ├── README.md                   # 📖 Descripción general del proyecto
 └── main.py                     # 🏁 Script principal para ejecutar el pipeline
-
+---
 1. **Clonar el repositorio:**
 
    ```bash
    git clone https://github.com/salopezna/2_PI_SoyHenry..git
 
+<p align="justify">
+
 #### *A partir de fuentes de información como el portal de ENACOM (https://indicadores.enacom.gob.ar/datos-abiertos), se obtienen datos asociados al comportamiento histórico trimestral desde el año 2014 hasta el tercer trimestre de 2024 a nivel nacional y, en algunos casos, a nivel provincial. Todos estos datos están concentrados en múltiples hojas dentro de un solo archivo de Excel.*
+</p>
