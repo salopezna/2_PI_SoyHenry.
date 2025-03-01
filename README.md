@@ -1,12 +1,13 @@
 ---
 # **✅ PROYECTO DE DATASCIENCE**
+---
 ## **Análisis del Sector de Internet en Argentina (2014 a 3er Trim. 2024)**
 ### **Descripción**
 
 La industria de las telecomunicaciones ha desempeñado un papel crucial en nuestra sociedad, facilitando la información a escala global y permitiendo la comunicación continua. La transferencia de datos y la comunicación se realizan principalmente a través de internet, líneas telefónicas fijas y móviles. Argentina está a la vanguardia en el desarrollo de las telecomunicaciones, contando con un total de 62,12 millones de conexiones en 2020. Dada la relevancia del tema para el país, he llevado a cabo un análisis exhaustivo que permite identificar el comportamiento de este sector a nivel nacional, enfocándome en el acceso al servicio de Internet y su relación con otros servicios de comunicaciones. El objetivo es generar recomendaciones para ofrecer una buena calidad de servicio, identificar oportunidades de crecimiento y plantear soluciones personalizadas para clientes actuales o potenciales.
-
+---
 ### **Objetivos**
-
+---
 - **Extracción de datos:** Importar y leer datos de diversas fuentes en un único workbook.
 - **Transformación y limpieza:** 
   - Normalizar y estandarizar nombres de campos.
@@ -15,9 +16,9 @@ La industria de las telecomunicaciones ha desempeñado un papel crucial en nuest
 - **Análisis Exploratorio de Datos (EDA):** 
   - Generar gráficos y tablas para visualizar tendencias.
   - Calcular estadísticas descriptivas que permitan evaluar la calidad y consistencia de los datos.
-
+---
 ### **Stack Tecnológico**
-
+---
 - **Lenguaje:** Python 3.12
 - **Entorno:** Jupyter Notebook en Visual Studio Code
 - **Librerías:**  
@@ -25,36 +26,18 @@ La industria de las telecomunicaciones ha desempeñado un papel crucial en nuest
   - **NumPy**: Operaciones numéricas.  
   - **Matplotlib/Seaborn**: Visualización de datos.
 - **Control de Versiones:** Git y GitHub
-
+---
 ### **Estructura del Proyecto**
-
+---
 - `notebooks/`: Contiene los notebooks de ETL (`etl.ipynb`) y EDA (`eda.ipynb`).
 - `data/`:  
   - `raw/`: Datos originales (Excel).
   - `processed/`: Datos transformados.
 - `functions/`: Funciones reutilizables para el proceso ETL y EDA.
 - `requirements.txt`: Dependencias del proyecto.
-
-### **Instrucciones de Uso**
-
-1. **Clonar el repositorio:**
-
-   ```bash
-   git clone https://github.com/salopezna/2_PI_SoyHenry..git
 ---
-
-# 2_PI_SoyHenry
-# 2_PI_SoyHenry..
-
-### 💡 **Organización del Proyecto para el Desarrollo del Análisis del Sector**
-
-Si en **Jupyter Notebook** no se ve bien por los emojis o la alineación:
-
-- **Usa solo caracteres ASCII** para estructuras más simples:
-  
-```markdown
 # Estructura del Proyecto
-
+---
 
 mi_proyecto/
 │
@@ -88,29 +71,11 @@ mi_proyecto/
 ├── .gitignore                  # 🚫 Archivos/carpetas a ignorar en Git
 ├── README.md                   # 📖 Descripción general del proyecto
 └── main.py                     # 🏁 Script principal para ejecutar el pipeline
+---
+### **Instrucciones de Uso**
+---
+1. **Clonar el repositorio:**
 
-
-
-mvp_pi2/
-│
-├── datos/                       
-│   ├── crudos_raw/              
-│   └── transformados_processed/ 
-│
-├── notebooks/                   
-│   └── eda_notebook.ipynb       
-│   └── etl_notebook.ipynb       
-│
-├── services/                         
-│   ├── __init__.py              
-│   ├── etl.py                   
-│   ├── api.py                   
-│   └── validation.py            
-│
-├── tests/                       
-│   └── test.py              
-│
-├── requirements.txt             
-├── README.md                    
-└── main.py  
-#### *A partir de fuentes de información como el portal de ENACOM (https://indicadores.enacom.gob.ar/datos-abiertos), se obtienen datos asociados al comportamiento histórico trimestral desde el año 2014 hasta el tercer trimestre de 2024 a nivel nacional y, en algunos casos, a nivel provincial. Todos estos datos están concentrados en múltiples hojas dentro de un solo archivo de Excel.*
+   ```bash
+   git clone https://github.com/salopezna/2_PI_SoyHenry..git
+---
