@@ -435,6 +435,48 @@ def datos_unicos_hoja(item, campos):
 
 #######################################################
 
+import unicodedata
+
+def normalizar_texto(texto):
+    """
+    Elimina acentos y otros signos diacríticos de una cadena.
+    """
+    # Normaliza a forma 'NFKD' y codifica en ASCII ignorando errores, luego decodifica.
+    return unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII')
+
+#######################################################
+
+import pandas as pd
+import re
+
+def reemplazar_valor_en_hojas(df_dict, campo, cambio):
+    """
+    Recorre un diccionario de DataFrames (hojas de un Excel) y reemplaza en cada hoja
+    los valores de la columna especificada que contengan la palabra a buscar, sustituyéndola
+    por el nuevo valor.
+    
+    Parámetros:
+      - df_dict (dict): Diccionario de DataFrames, donde la clave es el nombre de la hoja y 
+                        el valor es el DataFrame.
+      - campo (str): El nombre de la columna en la que se realizará la búsqueda y el reemplazo.
+      - cambio (tuple): Una tupla (buscar, reemplazo) donde:
+            * buscar (str): La palabra a buscar (la búsqueda es insensible a mayúsculas).
+            * reemplazo (str): El valor con el que se reemplazará la palabra encontrada.
+            
+    Retorna:
+      dict: El mismo diccionario de DataFrames, con la modificación aplicada a cada hoja donde exista la columna.
+    """
+    buscar, reemplazo = cambio
+    for hoja, df in df_dict.items():
+        if campo in df.columns:
+            # Convertir la columna a string para asegurarse de que el método .str.replace funcione.
+            df[campo] = df[campo].astype(str).str.replace(r'(?i)' + re.escape(buscar), reemplazo, regex=True)
+        else:
+            print(f"En la hoja '{hoja}', el campo '{campo}' no se encuentra.\n")
+    return df_dict
+
+#######################################################
+
 def fusionar_por_campos(campo_id, lista_hojas, df_dict):
     """
     Fusiona (merge) las hojas indicadas en 'lista_hojas' usando los campos en 'campo_id'
