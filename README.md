@@ -80,5 +80,6 @@ mvp_pi2/
 
 <p align="justify">
 
-#### *A partir de fuentes de información como el portal de ENACOM (https://indicadores.enacom.gob.ar/datos-abiertos), se obtienen datos asociados al comportamiento histórico trimestral desde el año 2014 hasta el tercer trimestre de 2024 a nivel nacional y, en algunos casos, a nivel provincial. Todos estos datos están concentrados en múltiples hojas dentro de un solo archivo de Excel.*
+*A partir de fuentes de información como el portal de ENACOM (https://indicadores.enacom.gob.ar/datos-abiertos), se obtienen datos asociados al comportamiento histórico trimestral desde el año 2014 hasta el tercer trimestre de 2024 a nivel nacional y, en algunos casos, a nivel provincial. Todos estos datos están concentrados en múltiples hojas dentro de un solo archivo de Excel.*
+
 </p>
