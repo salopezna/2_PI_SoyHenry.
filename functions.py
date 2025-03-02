@@ -294,7 +294,61 @@ def validar_df(df):
 '''
 #######################################################
 
+import pandas as pd
 
+def generar_diccionario_tipos(df_dict, sheet_name):
+    """
+    Genera un string que representa un diccionario de tipos de datos para cada columna de la hoja 
+    especificada en el diccionario de DataFrames.
+
+    La salida tendrá un formato similar a:
+    
+    diccionario_tipos_Dial-BAf = {
+        "Año": "Int64",
+        "Trimestre": "Int64",
+        "Provincia": "category",
+        "Tot_B_Ancha_Fija_x_Prov": "Int64",
+        "Tot_DialUp_x_Prov": float,
+        "Tot_DialUp_+_B_Ancha_Fija_x_Prov": "Int64"
+    }
+    
+    Parámetros:
+      - df_dict (dict): Diccionario de DataFrames (por ejemplo, el resultado de pd.read_excel(..., sheet_name=None)).
+      - sheet_name (str): El nombre de la hoja a procesar.
+    
+    Retorna:
+      str: Un string con la asignación del diccionario de tipos.
+    """
+    # Extrae el DataFrame correspondiente a la hoja
+    if sheet_name not in df_dict:
+        raise KeyError(f"El diccionario no contiene la hoja '{sheet_name}'")
+    df = df_dict[sheet_name]
+    
+    header = f"diccionario_tipos_{sheet_name}"
+    result = f"{header} = {{\n"
+    
+    for col in df.columns:
+        dtype = df[col].dtype
+        
+        # Determinar la representación deseada según el tipo de dato.
+        if isinstance(dtype, pd.CategoricalDtype):
+            tipo_str = '"category"'
+        elif pd.api.types.is_object_dtype(df[col]):
+            tipo_str = "str"
+        else:
+            if dtype.name in ['int64', 'Int64']:
+                tipo_str = '"Int64"'
+            elif dtype.name in ['float64']:
+                tipo_str = "float"
+            elif pd.api.types.is_datetime64_any_dtype(df[col]):
+                tipo_str = "pd.Timestamp"
+            else:
+                tipo_str = f'"{dtype.name}"'
+        result += f'    "{col}": {tipo_str},\n'
+    result += "}"
+    return result
+
+#######################################################
 
 # Función para obtener las hojas que contienen todos los campos indicados en 'lista_campos' y sus dimensiones.
 def obtener_hojas_validas(lista_campos, df_dict, hojas_excluir=None):
@@ -471,11 +525,57 @@ def reemplazar_valor_en_hojas(df_dict, campo, cambio):
         if campo in df.columns:
             # Convertir la columna a string para asegurarse de que el método .str.replace funcione.
             df[campo] = df[campo].astype(str).str.replace(r'(?i)' + re.escape(buscar), reemplazo, regex=True)
+            #print(f"En la hoja '{hoja}', se cambia '{buscar}' por '{reemplazo}' en el campo '{campo}'.")
         else:
-            print(f"En la hoja '{hoja}', el campo '{campo}' no se encuentra.\n")
+            print(f"En la hoja '{hoja}', el campo '{campo}' no se encuentra.")
     return df_dict
 
 #######################################################
+
+import pandas as pd
+import datetime
+import re
+
+def convertidor_tipo_dato_campo(df_dict, campo, tipo_objetivo):
+    """
+    Recorre un diccionario de DataFrames y, para cada hoja que contenga la columna especificada (campo),
+    convierte esa columna al tipo indicado (tipo_objetivo).
+
+    Parámetros:
+      - df_dict (dict): Diccionario de DataFrames (por ejemplo, el resultado de pd.read_excel(..., sheet_name=None)).
+      - campo (str): Nombre de la columna a convertir.
+      - tipo_objetivo: Tipo al que se desea convertir la columna. Por ejemplo, int o "Int64" (para enteros nullable),
+                       float, bool, datetime, etc.
+    
+    Retorna:
+      dict: El mismo diccionario de DataFrames, con la conversión aplicada en las hojas que contienen la columna.
+    """
+    for sheet, df in df_dict.items():
+        if campo in df.columns:
+            # Para enteros, se asume que la columna puede tener valores con caracteres extraños,
+            # por lo que se extraen únicamente los dígitos y se convierte al tipo entero nullable "Int64".
+            if tipo_objetivo in [int, "Int64"]:
+                # Se convierte la columna a string, se extrae la primera secuencia de dígitos (uno o más)
+                # y se convierte a número. Luego se asigna el tipo "Int64".
+                df[campo] = pd.to_numeric(
+                    df[campo].astype(str).str.extract(r'(\d+)')[0],
+                    errors='coerce'
+                ).astype("Int64")
+            elif tipo_objetivo == float:
+                df[campo] = pd.to_numeric(df[campo], errors='coerce')
+            elif tipo_objetivo == bool:
+                df[campo] = df[campo].apply(lambda x: str(x).strip().lower() in ['true', '1'] if pd.notna(x) else False)
+            elif tipo_objetivo in [datetime.datetime, pd.Timestamp]:
+                df[campo] = pd.to_datetime(df[campo], errors='coerce')
+            else:
+                # Para otros tipos, se usa la conversión estándar.
+                df[campo] = df[campo].astype(tipo_objetivo)
+        else:
+            print(f"En la hoja '{sheet}', el campo '{campo}' no se encuentra.")
+    return df_dict
+
+#######################################################
+
 
 def fusionar_por_campos(campo_id, lista_hojas, df_dict):
     """
