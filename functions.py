@@ -533,9 +533,9 @@ def reemplazar_valor_en_hojas(df_dict, campo, cambio):
         if campo in df.columns:
             # Convertir la columna a string para asegurarse de que el método .str.replace funcione.
             df[campo] = df[campo].astype(str).str.replace(r'(?i)' + re.escape(buscar), reemplazo, regex=True)
-            #print(f"En la hoja '{hoja}', se cambia '{buscar}' por '{reemplazo}' en el campo '{campo}'.")
-        else:
-            print(f"En la hoja '{hoja}', el campo '{campo}' no se encuentra.")
+            print(f"Se reemplazan valores en la hoja '{hoja}'.")
+        '''else:
+            print(f"En la hoja '{hoja}', el campo '{campo}' no se encuentra.")'''
     return df_dict
 
 #######################################################
@@ -584,6 +584,91 @@ def convertidor_tipo_dato_campo(df_dict, campo, tipo_objetivo):
 
 #######################################################
 
+import pandas as pd
+
+def normalizar_y_categorizar_campo(df_dict, hojas, campo):
+    """
+    Recorre las hojas indicadas en el diccionario de DataFrames y normaliza el campo especificado.
+    Para ello, elimina espacios, acentos y otros signos diacríticos de los valores, los pone en formato Title
+    y convierte la columna a tipo category usando un conjunto global de categorías.
+    
+    Parámetros:
+      - df_dict (dict): Diccionario de DataFrames (por ejemplo, obtenido con pd.read_excel(..., sheet_name=None)).
+      - hojas (list): Lista de nombres (claves) de las hojas en las que se desea normalizar el campo.
+      - campo (str): Nombre de la columna a normalizar (por ejemplo, "Partido").
+    
+    Retorna:
+      dict: El diccionario de DataFrames con la columna especificada actualizada en las hojas indicadas.
+    """
+    from functions import normalizar_texto  # Asegúrate de que la función normalizar_texto esté definida en functions.py
+
+    # Crear un conjunto para almacenar las categorías únicas globales del campo especificado
+    categorias_global = set()
+    
+    # Recorremos cada hoja para recolectar las categorías únicas
+    for hoja in hojas:
+        df = df_dict.get(hoja)
+        if df is not None and campo in df.columns:
+            # Normalizamos la columna: convertimos a string, quitamos espacios, aplicamos normalizar_texto y Title Case
+            serie_norm = df[campo].astype(str).str.strip().apply(normalizar_texto).str.title()
+            categorias_global.update(serie_norm.unique())
+    
+    # Eliminamos posibles valores 'nan'
+    categorias_global = {cat for cat in categorias_global if cat.lower() != 'nan'}
+    # Convertir a lista ordenada
+    categorias_global = sorted(categorias_global)
+    
+    print(f"Categorías globales para '{campo}':", categorias_global)
+    print("Cantidad de categorías únicas:", len(categorias_global))
+    
+    # Recorremos nuevamente las hojas y actualizamos la columna especificada convirtiéndola a tipo category
+    for hoja in hojas:
+        df = df_dict.get(hoja)
+        if df is not None and campo in df.columns:
+            df[campo] = pd.Categorical(
+                df[campo].astype(str).str.strip().apply(normalizar_texto).str.title(),
+                categories=categorias_global,
+                ordered=False  # Puedes cambiar a True si necesitas un orden específico
+            )
+    return df_dict
+
+#######################################################
+
+import pandas as pd
+
+def normalizar_y_cast_numero(df_dict, hojas, campos):
+    """
+    Recorre las hojas indicadas en el diccionario de DataFrames y normaliza los campos especificados,
+    extrayendo la primera secuencia de dígitos de cada valor, para luego hacer casting a entero nullable ("Int64").
+    
+    Parámetros:
+      - df_dict (dict): Diccionario de DataFrames (por ejemplo, obtenido con pd.read_excel(..., sheet_name=None)).
+      - hojas (list): Lista de nombres (claves) de las hojas en las que se desea normalizar y convertir los campos.
+      - campos (list): Lista de nombres de columnas a procesar (por ejemplo, ["Año", "Trimestre"]).
+    
+    Retorna:
+      dict: El diccionario de DataFrames con los campos especificados actualizados.
+    """
+    # Para cada hoja en la lista indicada:
+    for hoja in hojas:
+        df = df_dict.get(hoja)
+        if df is not None:
+            for campo in campos:
+                if campo in df.columns:
+                    # Convertir a string, quitar espacios, aplicar normalización (si se requiere)
+                    # y extraer la primera secuencia de dígitos.
+                    df[campo] = pd.to_numeric(
+                        df[campo].astype(str)
+                                .str.strip()
+                                .apply(lambda x: x if x != "" else None)
+                                .str.extract(r'(\d+)', expand=False),
+                        errors='coerce'
+                    ).astype("Int64")
+                else:
+                    print(f"El campo '{campo}' no se encuentra en la hoja '{hoja}'.")
+    return df_dict
+
+#######################################################
 
 def fusionar_por_campos(campo_id, lista_hojas, df_dict):
     """
@@ -709,5 +794,4 @@ def convertir_a_estructura(valor, tipo_esperado):
         return valor  # Si ya es list o dict, lo devuelve tal cual
     except (ValueError, SyntaxError):
         return None
-    
     
