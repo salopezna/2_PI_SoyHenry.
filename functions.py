@@ -571,6 +571,71 @@ def normalizar_y_cast_numero(df_dict, hojas, campos):
 
 #######################################################
 
+import pandas as pd
+
+def fusionar_hojas_por_campos(df_dict, lista_hojas, lista_campos):
+    """
+    Fusiona las hojas especificadas en 'lista_hojas' (todas contenidas en df_dict)
+    utilizando como llaves de unión los campos en 'lista_campos'.
+
+    Parámetros:
+    -----------
+    - df_dict (dict): Diccionario de DataFrames, donde la clave es el nombre de la hoja
+                      y el valor es el DataFrame correspondiente.
+    - lista_hojas (list): Lista de nombres de las hojas a fusionar.
+    - lista_campos (list): Lista de nombres de campos que sirven como llave compuesta de fusión.
+
+    Retorna:
+    --------
+    pd.DataFrame
+        DataFrame resultante de la fusión externa (outer join) de las hojas indicadas.
+        Si no se pudo fusionar ninguna (por ausencia de hojas o campos), devuelve un DataFrame vacío.
+    """
+    df_fusionado = None  # Aquí iremos acumulando la fusión
+
+    for hoja in lista_hojas:
+        # Verificamos que la hoja exista en el diccionario
+        if hoja not in df_dict:
+            print(f"Advertencia: La hoja '{hoja}' no está en el diccionario. Se omite.")
+            continue
+
+        df_actual = df_dict[hoja]
+
+        # Verificamos que todos los campos de 'lista_campos' existan en la hoja
+        campos_faltantes = [campo for campo in lista_campos if campo not in df_actual.columns]
+        if campos_faltantes:
+            print(f"Advertencia: La hoja '{hoja}' no contiene estos campos: {campos_faltantes}. Se omite.")
+            continue
+
+        # Si es la primera hoja válida, la copiamos para iniciar la fusión
+        if df_fusionado is None:
+            df_fusionado = df_actual.copy()
+        else:
+            # Fusionamos (outer join) con el DataFrame acumulado
+            df_fusionado = pd.merge(
+                df_fusionado,
+                df_actual,
+                on=lista_campos,
+                how='outer',
+                suffixes=('', '_dup')
+            )
+
+            # (Opcional) Si deseas eliminar columnas duplicadas:
+            # por ejemplo, si en dos hojas había columnas con el mismo nombre,
+            # la fusión las renombra con '_dup'. Puedes decidir aquí qué hacer con ellas.
+            # for col in df_fusionado.columns:
+            #     if col.endswith('_dup'):
+            #         # Lógica para eliminar o combinar esa columna
+            #         ...
+    
+    # Si df_fusionado sigue siendo None, significa que ninguna hoja era válida
+    if df_fusionado is None:
+        return pd.DataFrame()
+
+    return df_fusionado
+
+#######################################################
+
 def fusionar_por_campos(campo_id, lista_hojas, df_dict):
     """
     Fusiona (merge) las hojas indicadas en 'lista_hojas' usando los campos en 'campo_id'
