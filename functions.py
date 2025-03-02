@@ -3,18 +3,26 @@ import numpy as np
 import ast
 from datetime import datetime
 
-def opciones_impresion(width=1000, expand=False, max_columns=None):
+import pandas as pd
+
+def opciones_impresion(width=1000, expand=False, max_columns=None, max_rows=None, max_colwidth=None, colheader_justify='left'):
     """
     Configura las opciones de visualización de Pandas para imprimir DataFrames.
-
+    
     Parámetros:
       - width (int): Ancho máximo de la salida (por defecto 1000).
       - expand (bool): Si es False, muestra el DataFrame en una sola línea si es posible (por defecto False).
       - max_columns (int o None): Número máximo de columnas a mostrar; None muestra todas.
+      - max_rows (int o None): Número máximo de filas a mostrar; None muestra todas.
+      - max_colwidth (int o None): Ancho máximo de cada columna; None no trunca.
+      - colheader_justify (str): Justificación de las cabeceras de columna (por ejemplo, 'left', 'right' o 'center').
     """
     pd.set_option('display.expand_frame_repr', expand)
     pd.set_option('display.max_columns', max_columns)
     pd.set_option('display.width', width)
+    pd.set_option('display.max_rows', max_rows)
+    pd.set_option('display.max_colwidth', max_colwidth)
+    pd.set_option('display.colheader_justify', colheader_justify)
 
 def renombrar_campos(df_dict, nuevos_nombres):
     """
