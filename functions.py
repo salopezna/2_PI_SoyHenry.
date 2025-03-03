@@ -833,7 +833,7 @@ def transformar_y_visualizar(df, campo, log_transform=False, sqrt_transform=Fals
     df_mod[nuevo_campo] = transformada
 
     # Creamos una figura con tres subplots (histograma, boxplot, Q-Q plot) comparando original y transformada
-    fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(12, 12))
+    fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(12, 7))
     fig.suptitle(f"Comparación antes y después de la transformación en '{campo}'", fontsize=16)
     
     # Histogramas
