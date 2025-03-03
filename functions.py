@@ -873,3 +873,62 @@ def transformar_y_visualizar(df, campo, log_transform=False, sqrt_transform=Fals
     
     return df_mod
 
+#######################################################
+
+import pandas as pd
+
+def crear_fecha_trimestral_df(df, anio_col="Año", trimestre_col="Trimestre"):
+    """
+    A partir de las columnas 'Año' y 'Trimestre' de un DataFrame, crea una nueva columna 'Fecha' que
+    representa el primer día del trimestre correspondiente. Se asume que 'Trimestre' toma valores de 1 a 4,
+    con la siguiente correspondencia:
+      - 1 -> 01/01/Año
+      - 2 -> 01/04/Año
+      - 3 -> 01/07/Año
+      - 4 -> 01/10/Año
+
+    Luego, el DataFrame se ordena cronológicamente por 'Fecha', se reinician los índices y se reordena
+    de modo que 'Fecha' quede en la primera posición.
+
+    Parámetros:
+      - df (DataFrame): El DataFrame que contiene las columnas de año y trimestre.
+      - anio_col (str): Nombre de la columna que contiene el año (por defecto "Año").
+      - trimestre_col (str): Nombre de la columna que contiene el número de trimestre (por defecto "Trimestre").
+
+    Retorna:
+      DataFrame: Una copia del DataFrame con la nueva columna 'Fecha' en la primera posición y ordenado por ella.
+    """
+    df_mod = df.copy()
+
+    def asignar_fecha(row):
+        try:
+            anio = int(row[anio_col])
+            trimestre = int(row[trimestre_col])
+        except Exception:
+            return pd.NaT
+        
+        if trimestre == 1:
+            return pd.Timestamp(year=anio, month=1, day=1)
+        elif trimestre == 2:
+            return pd.Timestamp(year=anio, month=4, day=1)
+        elif trimestre == 3:
+            return pd.Timestamp(year=anio, month=7, day=1)
+        elif trimestre == 4:
+            return pd.Timestamp(year=anio, month=10, day=1)
+        else:
+            return pd.NaT
+
+    # Crear la columna "Fecha"
+    df_mod["Fecha"] = df_mod.apply(asignar_fecha, axis=1)
+    # Ordenar el DataFrame por la nueva columna "Fecha"
+    df_mod.sort_values("Fecha", inplace=True)
+    df_mod.reset_index(drop=True, inplace=True)
+    # Reordenar las columnas para que "Fecha" quede en la primera posición
+    cols = df_mod.columns.tolist()
+    cols.remove("Fecha")
+    df_mod = df_mod[["Fecha"] + cols]
+    
+    return df_mod
+
+#######################################################
+
