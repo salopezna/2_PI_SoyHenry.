@@ -761,3 +761,115 @@ def convertir_a_estructura(valor, tipo_esperado):
     except (ValueError, SyntaxError):
         return None
     
+#######################################################
+
+def imputar_media(df, campos):
+    """
+    Imputa los valores nulos de las columnas especificadas en 'campos' con la media aritmética de cada columna.
+
+    Parámetros:
+      - df (DataFrame): El DataFrame en el que se realizará la imputación.
+      - campos (list): Lista de nombres de columnas a imputar.
+
+    Retorna:
+      DataFrame: El DataFrame con las columnas actualizadas.
+    """
+    for campo in campos:
+        if campo in df.columns:
+            media = df[campo].mean()
+            df[campo] = df[campo].fillna(media)  # Reasigna la columna sin usar inplace
+        else:
+            print(f"El campo '{campo}' no se encontró en el DataFrame.")
+    return df
+
+#######################################################
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.stats as stats
+
+def transformar_y_visualizar(df, campo, log_transform=False, sqrt_transform=False,
+                             mostrar_hist=True, mostrar_box=True, mostrar_qq=True, c=1):
+    """
+    Aplica una transformación al campo indicado y visualiza la comparación antes y después.
+    
+    Parámetros:
+      - df (DataFrame): El DataFrame que contiene la columna a transformar.
+      - campo (str): Nombre de la columna a transformar (debe ser numérica).
+      - log_transform (bool): Si es True, aplica transformación logarítmica: log(x + c).
+      - sqrt_transform (bool): Si es True, aplica transformación raíz cuadrada: sqrt(x).
+          Nota: Si ambas son True, primero se aplica la logarítmica y luego la raíz cuadrada.
+      - mostrar_hist (bool): Si True, muestra histogramas.
+      - mostrar_box (bool): Si True, muestra boxplots.
+      - mostrar_qq (bool): Si True, muestra Q-Q plots.
+      - c (float): Constante a sumar para evitar problemas con valores cero en la transformación logarítmica.
+    
+    Retorna:
+      DataFrame: Una copia del DataFrame con una nueva columna llamada campo_transf que contiene la variable transformada.
+    """
+    # Aseguramos que la columna existe y es numérica
+    if campo not in df.columns:
+        raise KeyError(f"La columna '{campo}' no se encuentra en el DataFrame.")
+    if not pd.api.types.is_numeric_dtype(df[campo]):
+        raise TypeError(f"La columna '{campo}' no es numérica, no se puede transformar.")
+
+    # Copiamos el DataFrame para no modificar el original
+    df_mod = df.copy()
+    
+    # Guardamos la serie original
+    original = df_mod[campo]
+    
+    # Aplicamos la transformación solicitada
+    transformada = original.copy()
+    if log_transform:
+        # Para evitar problemas con ceros, sumamos una constante c
+        transformada = np.log(transformada + c)
+    if sqrt_transform:
+        transformada = np.sqrt(transformada)
+    
+    # Agregamos la columna transformada con un sufijo
+    nuevo_campo = campo + "_transf"
+    df_mod[nuevo_campo] = transformada
+
+    # Creamos una figura con tres subplots (histograma, boxplot, Q-Q plot) comparando original y transformada
+    fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(12, 12))
+    fig.suptitle(f"Comparación antes y después de la transformación en '{campo}'", fontsize=16)
+    
+    # Histogramas
+    if mostrar_hist:
+        axes[0,0].hist(original.dropna(), bins=20, color='skyblue', edgecolor='black')
+        axes[0,0].set_title(f"Histograma Original: {campo}")
+        axes[0,1].hist(transformada.dropna(), bins=20, color='salmon', edgecolor='black')
+        axes[0,1].set_title(f"Histograma Transformado: {nuevo_campo}")
+    else:
+        axes[0,0].axis('off')
+        axes[0,1].axis('off')
+        
+    # Boxplots
+    if mostrar_box:
+        axes[1,0].boxplot(original.dropna())
+        axes[1,0].set_title(f"Boxplot Original: {campo}")
+        axes[1,1].boxplot(transformada.dropna())
+        axes[1,1].set_title(f"Boxplot Transformado: {nuevo_campo}")
+    else:
+        axes[1,0].axis('off')
+        axes[1,1].axis('off')
+        
+    # Q-Q Plots
+    if mostrar_qq:
+        # Q-Q plot para datos originales
+        stats.probplot(original.dropna(), dist="norm", plot=axes[2,0])
+        axes[2,0].set_title(f"Q-Q Plot Original: {campo}")
+        # Q-Q plot para datos transformados
+        stats.probplot(transformada.dropna(), dist="norm", plot=axes[2,1])
+        axes[2,1].set_title(f"Q-Q Plot Transformado: {nuevo_campo}")
+    else:
+        axes[2,0].axis('off')
+        axes[2,1].axis('off')
+    
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.show()
+    
+    return df_mod
+
