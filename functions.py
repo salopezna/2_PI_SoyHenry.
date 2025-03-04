@@ -92,11 +92,6 @@ def load_excel_sheets(file_path):
 # Funciones para validar DataFrames
 #######################################################
 
-import pandas as pd
-import numpy as np
-import datetime
-import ast
-
 def validar_df(df):
     """
     Valida un DataFrame generando un resumen con información clave de cada columna.
@@ -110,17 +105,23 @@ def validar_df(df):
       - DateT: Cantidad de valores no nulos de tipo datetime (pd.Timestamp o datetime.datetime).
       - Str: Cantidad de valores no nulos de tipo str.
       - Ctgory: Cantidad de valores no nulos en columnas categóricas (si la columna es de tipo category).
-      - No_Nulos: Número de valores no nulos.
       - Nulos: Número de valores nulos.
+      - No_Nulos: Número de valores no nulos.
       - Únicos: Número de valores únicos (tras convertir a str).
       - Ceros: Conteo de valores iguales a cero (solo para columnas numéricas).
       - Vacíos (string): Conteo de valores vacíos o equivalentes ("" o "NA", "NULL", "None") en columnas de texto.
-      - Media, Desviación_Std, Mínimo, Q1_25%, Q2_50% (Mediana), Q3_75%, Máximo, Negativos: Estadísticas numéricas para columnas numéricas 
-        (NaN en otros casos).
+      - Skewness: Asimetría de la distribución (solo para columnas numéricas).
+      - Kurtosis: Curtosis de la distribución (solo para columnas numéricas).
+      - Media, Desviación_Std, Moda, Mínimo, Q1_25%, Q2_50% (Mediana), Q3_75%, Máximo, Negativos:
+        Estadísticas numéricas para columnas numéricas (NaN en otros casos).
       
     Retorna:
       pd.DataFrame: Un resumen transpuesto, donde cada fila corresponde a una columna del DataFrame original.
     """
+    import numpy as np
+    import pandas as pd
+    import datetime
+
     summary = {}
     
     for col in df.columns:
@@ -150,7 +151,6 @@ def validar_df(df):
             val_vacios = np.nan
         
         # Conteo de tipos en los valores no nulos.
-        # Usamos np.issubdtype para detectar valores de tipo entero o flotante
         count_int = sum(isinstance(x, int) for x in s.dropna())
         count_float = sum(isinstance(x, float) for x in s.dropna())
         count_bool = sum(isinstance(x, bool) for x in s.dropna())
@@ -158,8 +158,7 @@ def validar_df(df):
         count_str = sum(isinstance(x, str) for x in s.dropna())
         count_category = s.dropna().shape[0] if pd.api.types.is_categorical_dtype(s) else np.nan
         
-        # Nuevo campo: conteo de valores enteros de tipo "Int64"
-        # Se verifica si la columna tiene dtype "Int64" (el tipo nullable de pandas)
+        # Conteo de valores enteros de tipo "Int64" (nullable)
         count_int64 = s.dropna().shape[0] if s.dtype.name == "Int64" else 0
         
         # Estadísticas numéricas (solo para columnas numéricas)
@@ -172,8 +171,15 @@ def validar_df(df):
             q3 = s.quantile(0.75)
             maximo = s.max()
             negativos = (s < 0).sum()
+            skew = s.skew()
+            kurtosis = s.kurtosis()
+            mode_series = s.mode()
+            moda = mode_series.iloc[0] if not mode_series.empty else np.nan
         else:
             media = std = minimo = q1 = mediana = q3 = maximo = negativos = np.nan
+            skew = np.nan
+            kurtosis = np.nan
+            moda = np.nan
         
         summary[col] = {
             "Tipo de Dato": tipo,
@@ -184,13 +190,16 @@ def validar_df(df):
             "DateT": count_datetime,
             "Str": count_str,
             "Ctgory": count_category,
-            "No_Nulos": val_no_nulos,
             "Nulos": val_nulos,
+            "No_Nulos": val_no_nulos,
             "Únicos": val_unicos,
             "Ceros": val_cero,
             "Vacíos (string)": val_vacios,
+            "Skewness": skew,
+            "Kurtosis": kurtosis,
             "Media": media,
             "Desviación_Std": std,
+            "Moda": moda,
             "Mínimo": minimo,
             "Q1_25%": q1,
             "Q2_50%": mediana,
@@ -200,6 +209,7 @@ def validar_df(df):
         }
     
     return pd.DataFrame(summary).T
+
 
 #######################################################
 
@@ -932,3 +942,101 @@ def crear_fecha_trimestral_df(df, anio_col="Año", trimestre_col="Trimestre"):
 
 #######################################################
 
+import matplotlib.pyplot as plt
+import pandas as pd
+
+def graficar_eje_gemelo(
+    eje,
+    df,
+    col_x,
+    col_izq,
+    label_izq,
+    cols_der,
+    labels_der,
+    titulo="",
+    ncol_leyenda=4,
+    rotar_x=90
+):
+    """
+    Dibuja en 'eje' un gráfico de líneas con un eje izquierdo (col_izq) y
+    un eje derecho (varias columnas en cols_der).
+    
+    Parámetros:
+    -----------
+    eje : matplotlib.axes.Axes
+        Subplot donde se graficará.
+    df : pd.DataFrame
+        DataFrame con los datos (debe contener col_x, col_izq y cols_der).
+    col_x : str
+        Nombre de la columna en df para el eje X (ej. 'Fecha').
+    col_izq : str
+        Columna para el eje izquierdo (una sola serie).
+    label_izq : str
+        Etiqueta de la serie y del eje izquierdo.
+    cols_der : list[str]
+        Lista de columnas que se dibujarán en el eje derecho.
+    labels_der : list[str]
+        Lista de etiquetas para las columnas de cols_der (misma longitud).
+    titulo : str (opcional)
+        Título para este subplot.
+    ncol_leyenda : int (opcional)
+        Número de columnas en la leyenda combinada.
+    rotar_x : int (opcional)
+        Grados de rotación de las etiquetas del eje X (por defecto 90).
+    """
+
+    # Creamos el eje derecho "gemelo"
+    eje_derecho = eje.twinx()
+
+    # Título y etiquetas
+    eje.set_title(titulo)
+    eje.set_xlabel(col_x)
+    eje.set_ylabel(label_izq, color="black")
+
+    # Graficar la serie del eje izquierdo
+    linea_izq = eje.plot(
+        df[col_x],
+        df[col_izq],
+        color="black",
+        linewidth=2,
+        label=label_izq
+    )
+    eje.tick_params(axis='y', labelcolor="black")
+
+    # Graficar las series del eje derecho
+    lineas_der = []
+    for col, lab in zip(cols_der, labels_der):
+        l, = eje_derecho.plot(
+            df[col_x],
+            df[col],
+            marker='o',
+            label=lab
+        )
+        lineas_der.append(l)
+
+    eje_derecho.set_ylabel("Accesos (Eje Derecho)", color="blue")
+    eje_derecho.tick_params(axis='y', labelcolor="blue")
+
+    # Leyenda combinada
+    lineas_izq, etiquetas_izq = eje.get_legend_handles_labels()
+    lineas_der_, etiquetas_der_ = eje_derecho.get_legend_handles_labels()
+    eje.legend(
+        lineas_izq + lineas_der_,
+        etiquetas_izq + etiquetas_der_,
+        loc='upper center',
+        bbox_to_anchor=(0.5, -0.25),
+        ncol=ncol_leyenda
+    )
+
+    # Mostrar todas las fechas en el eje X
+    eje.set_xticks(df[col_x])
+    # Ajustar el formato (ej. solo año, o año-mes, etc.)
+    if pd.api.types.is_datetime64_any_dtype(df[col_x]):
+        # Por ejemplo, año-mes
+        eje.set_xticklabels(df[col_x].dt.strftime("%Y-%m"), rotation=rotar_x)
+    else:
+        # Si no es datetime, rotar igual
+        eje.set_xticklabels(df[col_x], rotation=rotar_x)
+
+    # Activar la cuadrícula
+    eje.grid(True, which='both', linestyle='--', alpha=0.3)
