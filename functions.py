@@ -945,98 +945,152 @@ def crear_fecha_trimestral_df(df, anio_col="Año", trimestre_col="Trimestre"):
 import matplotlib.pyplot as plt
 import pandas as pd
 
-def graficar_eje_gemelo(
-    eje,
-    df,
-    col_x,
-    col_izq,
-    label_izq,
-    cols_der,
-    labels_der,
-    titulo="",
-    ncol_leyenda=4,
-    rotar_x=90
+def graficar_listas_a_doble_eje(
+    eje,                                # Subplot donde se graficará
+    df,                                 # DataFrame con los datos (debe contener col_x, cols_izq y cols_der)
+    col_x,                              # Nombre de la columna en df para el eje X (ej. 'Fecha')
+    cols_izq,                           # Listas de columnas para el eje izquierdo (pueden ser varias series)
+    labels_izq,                         # Etiquetas para las series del eje izquierdo (misma longitud que cols_izq)
+    cols_der,                           # Listas de columnas para el eje derecho (pueden ser varias series)
+    labels_der,                         # Etiquetas para las series del eje derecho (misma longitud que cols_der)
+    label_eje_izq="Eje Izquierdo",      # Etiqueta general del eje izquierdo (lo que va en eje.set_ylabel())
+    label_eje_der="Eje Derecho",        # Etiqueta general del eje derecho (lo que va en eje_derecho.set_ylabel())
+    titulo="",                          # Título del subplot
+    ncol_leyenda=4,                     # Número de columnas en la leyenda combinada
+    rotar_x=90,                         # Grados de rotación de las etiquetas del eje X
+    colores_izq=None,                   # Lista de colores para las series del eje izquierdo
+    colores_der=None                    # Lista de colores para las series del eje derecho
 ):
     """
-    Dibuja en 'eje' un gráfico de líneas con un eje izquierdo (col_izq) y
-    un eje derecho (varias columnas en cols_der).
-    
+    Dibuja en 'eje' un gráfico de líneas con un eje izquierdo (varias series) y
+    un eje derecho (varias series).
+
     Parámetros:
     -----------
     eje : matplotlib.axes.Axes
         Subplot donde se graficará.
     df : pd.DataFrame
-        DataFrame con los datos (debe contener col_x, col_izq y cols_der).
+        DataFrame con los datos (debe contener col_x, cols_izq y cols_der).
     col_x : str
         Nombre de la columna en df para el eje X (ej. 'Fecha').
-    col_izq : str
-        Columna para el eje izquierdo (una sola serie).
-    label_izq : str
-        Etiqueta de la serie y del eje izquierdo.
+    cols_izq : list[str]
+        Columnas para el eje izquierdo (varias series).
+    labels_izq : list[str]
+        Etiquetas para las series del eje izquierdo (misma longitud que cols_izq).
+    label_eje_izq : str
+        Etiqueta que describe globalmente al eje izquierdo (p.ej. "Penetración x100 Hogares").
     cols_der : list[str]
-        Lista de columnas que se dibujarán en el eje derecho.
+        Columnas para el eje derecho (varias series).
     labels_der : list[str]
-        Lista de etiquetas para las columnas de cols_der (misma longitud).
+        Etiquetas para las series del eje derecho (misma longitud que cols_der).
+    label_eje_der : str
+        Etiqueta global del eje derecho (p.ej. "Accesos").
     titulo : str (opcional)
         Título para este subplot.
     ncol_leyenda : int (opcional)
         Número de columnas en la leyenda combinada.
     rotar_x : int (opcional)
         Grados de rotación de las etiquetas del eje X (por defecto 90).
+    colores_izq : list[str] o None
+        Lista de colores para las series del eje izquierdo.
+        Si es None, se usa la paleta por defecto de matplotlib.
+    colores_der : list[str] o None
+        Lista de colores para las series del eje derecho.
+        Si es None, se usa la paleta por defecto de matplotlib.
+
+    Retorna:
+    --------
+    None. Dibuja en el eje provisto.
     """
 
-    # Creamos el eje derecho "gemelo"
+    # Eje derecho gemelo
     eje_derecho = eje.twinx()
 
-    # Título y etiquetas
+    # Título y configuraciones
     eje.set_title(titulo)
     eje.set_xlabel(col_x)
-    eje.set_ylabel(label_izq, color="black")
 
-    # Graficar la serie del eje izquierdo
-    linea_izq = eje.plot(
-        df[col_x],
-        df[col_izq],
-        color="black",
-        linewidth=2,
-        label=label_izq
-    )
-    eje.tick_params(axis='y', labelcolor="black")
+    # Si no hay colores_izq, los dejamos en None
+    if colores_izq is None:
+        colores_izq = [None]*len(cols_izq)
+    # Si no hay colores_der, los dejamos en None
+    if colores_der is None:
+        colores_der = [None]*len(cols_der)
 
-    # Graficar las series del eje derecho
-    lineas_der = []
-    for col, lab in zip(cols_der, labels_der):
-        l, = eje_derecho.plot(
+    # ===================== EJE IZQUIERDO =====================
+    lineas_izq = []
+    # Graficar las series del eje izquierdo
+    for i, (col, lab) in enumerate(zip(cols_izq, labels_izq)):
+        color_linea = colores_izq[i % len(colores_izq)]
+        l, = eje.plot(
             df[col_x],
             df[col],
-            marker='o',
+            marker='.',
+            linewidth=3,
+            color=color_linea,
             label=lab
         )
-        lineas_der.append(l)
+        lineas_izq.append(l)
 
-    eje_derecho.set_ylabel("Accesos (Eje Derecho)", color="blue")
-    eje_derecho.tick_params(axis='y', labelcolor="blue")
+    # Elegimos el color para el nombre del eje izquierdo:
+    # Si la primera serie no tiene color definido (None), usamos 'black'.
+    # De lo contrario, usamos el color de la primera serie.
+    if len(colores_izq) > 0 and colores_izq[0] is not None:
+        eje_izq_color = colores_izq[0]
+    else:
+        eje_izq_color = 'black'
 
-    # Leyenda combinada
-    lineas_izq, etiquetas_izq = eje.get_legend_handles_labels()
+    eje.set_ylabel(label_eje_izq, color=eje_izq_color)
+    eje.tick_params(axis='y', labelcolor=eje_izq_color)
+
+    # ===================== EJE DERECHO =====================
+    lineas_der_plot = []
+    # Graficar las series del eje derecho
+    for j, (col, lab) in enumerate(zip(cols_der, labels_der)):
+        color_linea = colores_der[j % len(colores_der)]
+        l2, = eje_derecho.plot(
+            df[col_x],
+            df[col],
+            marker='s',
+            linewidth=2,
+            color=color_linea,
+            label=lab
+        )
+        lineas_der_plot.append(l2)
+
+    # Elegimos el color para el nombre del eje derecho (análogo al izquierdo).
+    if len(colores_der) > 0 and colores_der[0] is not None:
+        eje_der_color = colores_der[0]
+    else:
+        eje_der_color = 'blue'
+
+    eje_derecho.set_ylabel(label_eje_der, color=eje_der_color)
+    eje_derecho.tick_params(axis='y', labelcolor=eje_der_color)
+
+    # ===================== LEYENDA COMBINADA =====================
+    # Recuperar líneas y etiquetas de ambos ejes
+    lineas_izq_, etiquetas_izq_ = eje.get_legend_handles_labels()
     lineas_der_, etiquetas_der_ = eje_derecho.get_legend_handles_labels()
+
+    # Unimos todo
+    lineas_combinadas = lineas_izq_ + lineas_der_
+    etiquetas_combinadas = etiquetas_izq_ + etiquetas_der_
+
+    # Ubicar la leyenda debajo del subplot
     eje.legend(
-        lineas_izq + lineas_der_,
-        etiquetas_izq + etiquetas_der_,
+        lineas_combinadas,
+        etiquetas_combinadas,
         loc='upper center',
         bbox_to_anchor=(0.5, -0.25),
         ncol=ncol_leyenda
     )
 
-    # Mostrar todas las fechas en el eje X
+    # ===================== EJE X =====================
     eje.set_xticks(df[col_x])
-    # Ajustar el formato (ej. solo año, o año-mes, etc.)
     if pd.api.types.is_datetime64_any_dtype(df[col_x]):
-        # Por ejemplo, año-mes
         eje.set_xticklabels(df[col_x].dt.strftime("%Y-%m"), rotation=rotar_x)
     else:
-        # Si no es datetime, rotar igual
         eje.set_xticklabels(df[col_x], rotation=rotar_x)
 
-    # Activar la cuadrícula
+    # ===================== CUADRÍCULA =====================
     eje.grid(True, which='both', linestyle='--', alpha=0.3)
