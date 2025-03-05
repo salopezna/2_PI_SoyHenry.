@@ -3,8 +3,6 @@ import numpy as np
 import ast
 from datetime import datetime
 
-import pandas as pd
-
 def opciones_impresion(width=1000, expand=True, max_columns=None, max_rows=None, max_colwidth=None, colheader_justify='left'):
     """
     Configura las opciones de visualización de Pandas para imprimir DataFrames.
