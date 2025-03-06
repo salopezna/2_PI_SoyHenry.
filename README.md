@@ -106,12 +106,13 @@ El notebook <strong>EDA.ipynb</strong> detalla paso a paso los siguientes aspect
 ## **6. Dashboard y KPIs**
 1. **Dashboard**  
    - Se diseñó en Power BI un panel con:
-     - Filtros por provincia, trimestre, tecnología entre otros.  
-     - Visualizaciones de evolución temporal de accesos, penetración y velocidad media.  
-     - Mapas (si aplica) para ver la penetración o accesos por provincia.
+     - Filtros por trimestre y otro a nivel de provincias.  
+     - Visualizaciones de evolución temporal de accesos, penetración y velocidad media así como comportamiento de los ingresos en el tiempo.  
 
 2. **KPIs**  
    - **KPI propuesto**: Aumentar en un 2% el acceso a internet por cada 100 hogares a nivel provincial para el próximo trimestre.  
+   - **KPI FO**: Aumetar 10% la velocidad media de acceso a internet a traves de Fibra Optica (FO) a nivel Nacional para el proximo trimestre.
+   - **KPIs Ingresos**: Aumentar en un 23% los ingresos por accessos a Internet a nivel Nacional para el proximo trimestre.  
      \[
      \text{KPI} = \left(\frac{\text{Nuevo acceso} - \text{Acceso actual}}{\text{Acceso actual}}\right) \times 100
      \]  
