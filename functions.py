@@ -212,6 +212,59 @@ def validar_df(df):
 #######################################################
 
 import pandas as pd
+import numpy as np
+from sklearn.impute import KNNImputer
+
+def imputador_k_NN(df, columnas_imputar, k=5, weights="uniform"):
+    """
+    Imputa valores nulos (NaN) en las columnas numéricas de 'df' 
+    usando el método de k-vecinos más cercanos (KNNImputer).
+
+    Parámetros
+    ----------
+    df : pd.DataFrame
+        DataFrame que contiene los datos (incluyendo NaN) a imputar.
+    columnas_imputar : list[str]
+        Lista de nombres de columnas numéricas en las cuales se desea
+        aplicar la imputación por k-NN.
+    k : int, opcional
+        Número de vecinos a considerar en la imputación. 
+        Por defecto es 5.
+    weights : str, opcional
+        Tipo de ponderación a utilizar en la imputación. 
+        Puede ser "uniform" o "distance". Por defecto es "uniform".
+    
+    Retorna
+    -------
+    df : pd.DataFrame
+        El mismo DataFrame de entrada, pero con los valores nulos 
+        imputados en las columnas indicadas.
+    """
+    # Creamos una copia de las columnas a imputar
+    df_sub = df[columnas_imputar].copy()
+
+    # Inicializamos el imputador KNN con los parámetros deseados
+    imputer = KNNImputer(n_neighbors=k, weights=weights)
+
+    # Ajustamos el imputador y transformamos 'df_sub'
+    df_imputed_array = imputer.fit_transform(df_sub)
+
+    # Convertimos el resultado a DataFrame, 
+    # con el mismo índice y columnas que 'df_sub'
+    df_imputed = pd.DataFrame(
+        df_imputed_array, 
+        columns=columnas_imputar, 
+        index=df.index
+    )
+
+    # Reemplazamos las columnas originales por las imputadas
+    for col in columnas_imputar:
+        df[col] = df_imputed[col]
+
+    return df
+
+#######################################################
+import pandas as pd
 
 def generar_diccionario_tipos(df_dict, sheet_name):
     """
@@ -771,23 +824,68 @@ def convertir_a_estructura(valor, tipo_esperado):
     
 #######################################################
 
-def imputar_media(df, campos):
+def imputar_valor(df, campos, metodo="media"):
     """
-    Imputa los valores nulos de las columnas especificadas en 'campos' con la media aritmética de cada columna.
+    Imputa los valores nulos de las columnas especificadas en 'campos' 
+    siguiendo la estrategia indicada en 'metodo'.
 
     Parámetros:
-      - df (DataFrame): El DataFrame en el que se realizará la imputación.
-      - campos (list): Lista de nombres de columnas a imputar.
+    -----------
+    df : pd.DataFrame
+        El DataFrame en el que se realizará la imputación.
+    campos : list
+        Lista de nombres de columnas a imputar.
+    metodo : str, int o float
+        Puede tomar los siguientes valores:
+            - "media": Imputa con la media aritmética.
+            - "mediana": Imputa con la mediana.
+            - "moda": Imputa con la moda (el valor más frecuente).
+            - "minimo": Imputa con el valor mínimo de la columna.
+            - "maximo": Imputa con el valor máximo de la columna.
+            - Si se proporciona un número (int o float), se utilizará 
+              ese valor fijo para la imputación.
+        Por defecto es "media".
 
     Retorna:
-      DataFrame: El DataFrame con las columnas actualizadas.
+    --------
+    pd.DataFrame
+        El DataFrame con las columnas especificadas imputadas.
     """
     for campo in campos:
-        if campo in df.columns:
-            media = df[campo].mean()
-            df[campo] = df[campo].fillna(media)  # Reasigna la columna sin usar inplace
-        else:
+        if campo not in df.columns:
             print(f"El campo '{campo}' no se encontró en el DataFrame.")
+            continue
+        
+        # Determinamos el valor de imputación según 'metodo'
+        if metodo == "media":
+            valor_imputacion = df[campo].mean()
+        elif metodo == "mediana":
+            valor_imputacion = df[campo].median()
+        elif metodo == "moda":
+            # Si hay más de una moda, se toma la primera
+            valor_imputacion = df[campo].mode(dropna=True)
+            if not valor_imputacion.empty:
+                valor_imputacion = valor_imputacion.iloc[0]
+            else:
+                # En caso de que la columna sea completamente nula o no haya moda válida
+                valor_imputacion = None  
+        elif metodo == "minimo":
+            valor_imputacion = df[campo].min()
+        elif metodo == "maximo":
+            valor_imputacion = df[campo].max()
+        elif isinstance(metodo, (int, float)):
+            # Si es un número, lo usamos directamente
+            valor_imputacion = metodo
+        else:
+            print(f"Advertencia: método '{metodo}' no reconocido. Se omite la imputación en '{campo}'.")
+            continue
+        
+        # Imputamos si obtuvimos un valor válido
+        if valor_imputacion is not None:
+            df[campo] = df[campo].fillna(valor_imputacion)
+        else:
+            print(f"No se pudo imputar la columna '{campo}' con el método '{metodo}'.")
+    
     return df
 
 #######################################################
