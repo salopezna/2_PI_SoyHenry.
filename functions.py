@@ -90,35 +90,42 @@ def load_excel_sheets(file_path):
 # Funciones para validar DataFrames
 #######################################################
 
-def validar_df(df):
+import numpy as np
+import pandas as pd
+import datetime
+from scipy.stats import zscore
+
+def validar_df(
+    df, 
+    factor_iqr=3, 
+    z_threshold=3.0
+):
     """
     Valida un DataFrame generando un resumen con información clave de cada columna.
     
     Para cada columna se calcula:
       - Tipo de Dato
-      - Int: Cantidad de valores no nulos que sean de tipo entero (usando isinstance(x, int)).
-      - Int64: Conteo de valores no nulos si la columna tiene dtype "Int64" (tipo entero nullable de pandas).
+      - Int: Cantidad de valores no nulos que sean de tipo entero (isinstance(x, int)).
+      - Int64: Conteo de valores no nulos si la columna tiene dtype "Int64" (entero nullable).
       - Float: Cantidad de valores no nulos de tipo float.
       - Bool: Cantidad de valores no nulos de tipo bool.
       - DateT: Cantidad de valores no nulos de tipo datetime (pd.Timestamp o datetime.datetime).
       - Str: Cantidad de valores no nulos de tipo str.
-      - Ctgory: Cantidad de valores no nulos en columnas categóricas (si la columna es de tipo category).
+      - Ctgory: Cantidad de valores no nulos en columnas categóricas (si la columna es category).
       - Nulos: Número de valores nulos.
       - No_Nulos: Número de valores no nulos.
       - Únicos: Número de valores únicos (tras convertir a str).
-      - Ceros: Conteo de valores iguales a cero (solo para columnas numéricas).
-      - Vacíos (string): Conteo de valores vacíos o equivalentes ("" o "NA", "NULL", "None") en columnas de texto.
-      - Skewness: Asimetría de la distribución (solo para columnas numéricas).
-      - Kurtosis: Curtosis de la distribución (solo para columnas numéricas).
-      - Media, Desviación_Std, Moda, Mínimo, Q1_25%, Q2_50% (Mediana), Q3_75%, Máximo, Negativos:
-        Estadísticas numéricas para columnas numéricas (NaN en otros casos).
-      
+      - Ceros: Conteo de valores == 0 (solo para columnas numéricas).
+      - Vacíos (string): Conteo de "", "NA", "NULL", "None" en columnas de texto.
+      - Skewness: Asimetría (solo numéricas).
+      - Kurtosis: Curtosis (solo numéricas).
+      - Media, Desviación_Std, Moda, Mínimo, Q1_25%, Q2_50% (Mediana), Q3_75%, Máximo, Negativos (solo numéricas).
+      - IQR, FactorIQR, %OutL_IQR, LowerBound, UpperBound: Detección de outliers vía IQR.
+      - Z-Score, Z_Threshold, %OutL_Z_Thresh: Detección de outliers vía Z-Score.
+    
     Retorna:
-      pd.DataFrame: Un resumen transpuesto, donde cada fila corresponde a una columna del DataFrame original.
+      pd.DataFrame: Un DataFrame transpuesto, donde cada fila corresponde a una columna.
     """
-    import numpy as np
-    import pandas as pd
-    import datetime
 
     summary = {}
     
@@ -129,51 +136,92 @@ def validar_df(df):
             print(f"Advertencia: La columna '{col}' aparece duplicada. Se usará la primera aparición.")
             s = s.iloc[:, 0]
         
-        # Tipo de dato de la columna.
+        # Tipo de dato de la columna
         tipo = s.dtype
         
-        # Conteo de valores no nulos y nulos.
+        # Conteo de valores no nulos y nulos
         val_no_nulos = s.count()
         val_nulos = s.isna().sum()
         
-        # Número de valores únicos (tras convertir a str para homogeneizar).
+        # Número de valores únicos (tras convertir a str)
         val_unicos = s.astype(str).nunique(dropna=True)
         
-        # Conteo de ceros (solo para columnas numéricas).
+        # Conteo de ceros (solo numéricas)
         val_cero = (s == 0).sum() if pd.api.types.is_numeric_dtype(s) else np.nan
         
-        # Conteo de valores vacíos en columnas de texto.
+        # Conteo de vacíos en texto
         if pd.api.types.is_string_dtype(s):
-            val_vacios = s.apply(lambda x: x.strip() if isinstance(x, str) else x).isin(["", "NA", "NULL", "None"]).sum()
+            val_vacios = s.apply(lambda x: x.strip() if isinstance(x, str) else x)\
+                           .isin(["", "NA", "NULL", "None"]).sum()
         else:
             val_vacios = np.nan
         
-        # Conteo de tipos en los valores no nulos.
+        # Conteo de tipos en valores no nulos
         count_int = sum(isinstance(x, int) for x in s.dropna())
         count_float = sum(isinstance(x, float) for x in s.dropna())
         count_bool = sum(isinstance(x, bool) for x in s.dropna())
-        count_datetime = sum(isinstance(x, (pd.Timestamp, datetime.datetime)) for x in s.dropna())
+        count_datetime = sum(isinstance(x, (pd.Timestamp, datetime.datetime)) 
+                             for x in s.dropna())
         count_str = sum(isinstance(x, str) for x in s.dropna())
         count_category = s.dropna().shape[0] if pd.api.types.is_categorical_dtype(s) else np.nan
-        
-        # Conteo de valores enteros de tipo "Int64" (nullable)
         count_int64 = s.dropna().shape[0] if s.dtype.name == "Int64" else 0
         
-        # Estadísticas numéricas (solo para columnas numéricas)
-        if pd.api.types.is_numeric_dtype(s):
-            media = s.mean()
-            std = s.std()
-            minimo = s.min()
-            q1 = s.quantile(0.25)
-            mediana = s.median()
-            q3 = s.quantile(0.75)
-            maximo = s.max()
-            negativos = (s < 0).sum()
-            skew = s.skew()
-            kurtosis = s.kurtosis()
-            mode_series = s.mode()
+        # Inicializamos variables para outliers e info numérica
+        iqr_val = np.nan
+        lower_bound = np.nan
+        upper_bound = np.nan
+        outliers_iqr = np.nan
+        porc_outliers_iqr = np.nan
+
+        max_zscore = np.nan
+        outliers_z = np.nan
+        porc_outliers_z = np.nan
+        
+        # Estadísticas numéricas
+        if pd.api.types.is_numeric_dtype(s) and val_no_nulos > 0:
+            serie_num = s.dropna()
+            
+            media = serie_num.mean()
+            std = serie_num.std()
+            minimo = serie_num.min()
+            q1 = serie_num.quantile(0.25)
+            mediana = serie_num.median()
+            q3 = serie_num.quantile(0.75)
+            maximo = serie_num.max()
+            negativos = (serie_num < 0).sum()
+            skew = serie_num.skew()
+            kurtosis = serie_num.kurtosis()
+
+            # Moda
+            mode_series = serie_num.mode(dropna=True)
             moda = mode_series.iloc[0] if not mode_series.empty else np.nan
+            
+            # ---- Outliers via IQR ----
+            iqr_val = q3 - q1
+            lower_bound = q1 - factor_iqr * iqr_val
+            upper_bound = q3 + factor_iqr * iqr_val
+            mask_iqr = (serie_num < lower_bound) | (serie_num > upper_bound)
+            outliers_iqr = mask_iqr.sum()
+            if val_no_nulos > 0:
+                porc_outliers_iqr = round((outliers_iqr / val_no_nulos) * 100, 3)
+            
+            # ---- Outliers via Z-Score ----
+            # Para evitar error con constantes, checkeamos std>0
+            if serie_num.nunique() > 1:
+                zscores = np.abs(zscore(serie_num, nan_policy="omit"))
+                max_zscore = zscores.max()  # valor max abs zscore
+                mask_z = (zscores > z_threshold)
+                outliers_z = mask_z.sum()
+                if val_no_nulos > 0:
+                    porc_outliers_z = round((outliers_z / val_no_nulos) * 100, 3)
+            else:
+                # Si no hay variación, zscore no es definible
+                max_zscore = np.nan
+                outliers_z = np.nan
+                porc_outliers_z = np.nan
+
         else:
+            # No numérica o sin datos
             media = std = minimo = q1 = mediana = q3 = maximo = negativos = np.nan
             skew = np.nan
             kurtosis = np.nan
@@ -203,11 +251,19 @@ def validar_df(df):
             "Q2_50%": mediana,
             "Q3_75%": q3,
             "Máximo": maximo,
-            "Negativos": negativos
+            "Negativos": negativos,
+            # Outliers por IQR
+            "IQR": iqr_val,
+            "%OutL_IQR": porc_outliers_iqr,
+            "LowerBound": lower_bound,
+            "UpperBound": upper_bound,
+            # Outliers por Z-Score
+            "Z-Score": max_zscore,
+            "%OutL_Z_Thresh": porc_outliers_z
         }
     
+    # Retornamos el DataFrame transpuesto
     return pd.DataFrame(summary).T
-
 
 #######################################################
 
@@ -823,6 +879,106 @@ def convertir_a_estructura(valor, tipo_esperado):
         return None
     
 #######################################################
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+import numpy as np
+
+def visualizacion_distribucion(df, columna, titulo=""):
+    """
+    Genera una cuadrícula de 2x2 con visualizaciones de la distribución de la columna especificada:
+      1. Histograma + KDE
+      2. Boxplot
+      3. Q-Q Plot (comparación con distribución Normal)
+      4. Violin Plot
+    
+    Parámetros:
+    -----------
+    df : pd.DataFrame
+        DataFrame que contiene la columna a analizar.
+    columna : str
+        Nombre de la columna (numérica) a graficar.
+    titulo : str (opcional)
+        Título base a mostrar en la figura.
+    """
+
+    # Calculamos skewness y kurtosis
+    serie_no_nula = df[columna].dropna()
+    kurt = serie_no_nula.kurt()
+    skew = serie_no_nula.skew()
+
+    # Creamos la figura y ejes
+    fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(20, 8))
+
+    # Ajusta el espacio entre los subplots e imprime titulo con fontweight='bold', fontsize=18
+    fig.suptitle(
+        f"{titulo}\nKurtosis={kurt:.2f} - Skewness={skew:.2f}",
+        fontweight='bold',
+        fontsize=18,
+        y=1.02
+    )
+
+    # 1) Histograma + KDE (arriba-izquierda)
+    sns.histplot(
+        data=df, 
+        x=columna, 
+        kde=True, 
+        color='skyblue', 
+        ax=axes[0, 0]
+    )
+    axes[0, 0].set_title(f"Histograma + KDE de '{columna}'", fontweight='bold', fontsize=16)
+    
+    # Ajuste de etiquetas del eje X e Y (tamaño de fuente de los ticks)
+    axes[0, 0].tick_params(axis='both', labelsize=14)
+    # Ajuste del label del eje X (si deseas uno específico)
+    axes[0, 0].set_xlabel(columna, fontsize=14)
+    axes[0, 0].set_ylabel("Frecuencia", fontsize=14)
+
+    # 2) Boxplot (arriba-derecha)
+    sns.boxplot(
+        data=df, 
+        x=columna, 
+        color='lightgreen', 
+        ax=axes[0, 1]
+    )
+    axes[0, 1].set_title(f"Boxplot de '{columna}'", fontweight='bold', fontsize=16)
+    axes[0, 1].tick_params(axis='both', labelsize=14)
+    axes[0, 1].set_xlabel(columna, fontsize=14)
+
+    # 3) Q-Q Plot (abajo-izquierda)
+    (osm, osr), (slope, intercept, r) = stats.probplot(serie_no_nula, dist="norm")
+
+    axes[1, 0].scatter(
+        osm,
+        osr,
+        alpha=0.5,          # Transparencia en el relleno
+        c='b',              # Color de relleno de los puntos
+        edgecolors='none',  # Quita los bordes de los puntos
+        label='Data'
+    )
+
+    xx = np.linspace(min(osm), max(osm), 100)
+    yy = slope * xx + intercept
+    axes[1, 0].plot(xx, yy, 'r--', label='Recta Ajuste')
+    axes[1, 0].set_title(f"Q-Q Plot de '{columna}' vs Normal", fontweight='bold', fontsize=16)
+    axes[1, 0].tick_params(axis='both', labelsize=14)
+    axes[1, 0].legend(fontsize=14)
+
+    # 4) Violin Plot (abajo-derecha)
+    sns.violinplot(
+        data=df, 
+        x=columna, 
+        color='pink', 
+        ax=axes[1, 1]
+    )
+    axes[1, 1].set_title(f"Violin Plot de '{columna}'", fontweight='bold', fontsize=16)
+    axes[1, 1].tick_params(axis='both', labelsize=14)
+    axes[1, 1].set_xlabel(columna, fontsize=14)
+
+    # Ajuste de espacios para evitar solapamientos
+    plt.tight_layout(rect=[0, 0, 1, 1.03])
+    plt.show()
 
 def imputar_valor(df, campos, metodo="media"):
     """
