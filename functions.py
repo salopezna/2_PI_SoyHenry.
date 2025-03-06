@@ -320,6 +320,223 @@ def imputador_k_NN(df, columnas_imputar, k=5, weights="uniform"):
     return df
 
 #######################################################
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+def calcular_correlaciones(df, cols_numericas=None, metodo="pearson"):
+    """
+    Calcula la matriz de correlaciones para un subconjunto de columnas numéricas en un DataFrame.
+
+    Parámetros:
+    -----------
+    df : pd.DataFrame
+        DataFrame que contiene los datos.
+    cols_numericas : list[str] o None
+        Lista de columnas numéricas a incluir en la matriz de correlación.
+        Si es None, se seleccionan automáticamente las columnas numéricas.
+    metodo : str
+        Método de correlación. Puede ser 'pearson', 'spearman' o 'kendall'.
+
+    Retorna:
+    --------
+    pd.DataFrame : Matriz de correlación resultante.
+    """
+    if cols_numericas is None:
+        # Seleccionamos automáticamente columnas numéricas
+        df_num = df.select_dtypes(include=["number"])
+    else:
+        df_num = df[cols_numericas]
+
+    corr = df_num.corr(method=metodo)
+    return corr
+
+
+def plot_correlacion_heatmap(
+    corr_matrix, 
+    titulo="Matriz de Correlación", 
+    cmap="coolwarm", 
+    figsize=(11,12), 
+    annot_fontsize=7
+):
+    """
+    Genera un mapa de calor (heatmap) a partir de una matriz de correlación.
+
+    Parámetros:
+    -----------
+    corr_matrix : pd.DataFrame
+        Matriz de correlación.
+    titulo : str
+        Título para la gráfica.
+    cmap : str
+        Paleta de colores a usar (por defecto "coolwarm").
+    figsize : tuple
+        Tamaño de la figura (ancho, alto).
+    annot_fontsize : int
+        Tamaño de fuente de las anotaciones en el mapa de calor.
+    """
+    plt.figure(figsize=figsize)
+    sns.heatmap(
+        corr_matrix, 
+        annot=True, 
+        cmap=cmap, 
+        fmt=".2f",          # formato numérico de las celdas
+        square=True, 
+        linewidths=0.5,
+        annot_kws={"size": annot_fontsize},
+        cbar_kws={"shrink": 0.5}  # reduce la barra de color al 50% de su tamaño original
+    )
+    plt.title(titulo, fontweight='bold', fontsize=14)
+    plt.tight_layout()
+    plt.show()
+
+#######################################################
+
+def boxplot_categ_num(df, cat_col, num_col, titulo="", figsize=(14,5)):
+    """
+    Genera un boxplot para visualizar la distribución de una variable numérica
+    en función de una variable categórica.
+
+    Parámetros:
+    -----------
+    df : pd.DataFrame
+        DataFrame con los datos.
+    cat_col : str
+        Columna categórica.
+    num_col : str
+        Columna numérica.
+    titulo : str
+        Título del gráfico.
+    figsize : tuple
+        Tamaño de la figura.
+    """
+    plt.figure(figsize=figsize)
+    sns.boxplot(data=df, x=cat_col, y=num_col)
+    plt.title(titulo, fontweight='bold', fontsize=14)
+    plt.xticks(rotation=90)
+    plt.tight_layout()
+    plt.show()
+
+#######################################################
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def multivariado_dos_en_una_fila(df,
+                                 x1, y1, hue1,
+                                 x2, y2, hue2,
+                                 titulo="Multivariado: Comparaciones en 2 Subplots"):
+    """
+    Realiza dos comparaciones multivariadas (scatterplot con hue) en una sola fila (2 subplots).
+
+    - Subplot 1: df[x1] vs. df[y1], coloreado por df[hue1]
+    - Subplot 2: df[x2] vs. df[y2], coloreado por df[hue2]
+
+    Parámetros:
+    -----------
+    df : pd.DataFrame
+        DataFrame con las columnas a analizar.
+    x1, y1, hue1 : str
+        Columnas para el 1er scatterplot multivariado:
+          * x1: eje X
+          * y1: eje Y
+          * hue1: variable que define el color (tercera dimensión)
+    x2, y2, hue2 : str
+        Columnas para el 2do scatterplot multivariado.
+    titulo : str
+        Título global de la figura.
+    """
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(15, 6))
+    fig.suptitle(titulo, fontweight='bold', fontsize=14)
+
+    # ----- Subplot 1 -----
+    sns.scatterplot(
+        data=df,
+        x=x1,
+        y=y1,
+        hue=hue1,         # Tercera variable para el color
+        alpha=0.7,
+        ax=ax1
+    )
+    ax1.set_title(f"{x1} vs {y1} (hue={hue1})", fontweight='bold')
+    ax1.set_xlabel(x1)
+    ax1.set_ylabel(y1)
+    ax1.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0)
+
+    # ----- Subplot 2 -----
+    sns.scatterplot(
+        data=df,
+        x=x2,
+        y=y2,
+        hue=hue2,
+        alpha=0.7,
+        ax=ax2
+    )
+    ax2.set_title(f"{x2} vs {y2} (hue={hue2})", fontweight='bold')
+    ax2.set_xlabel(x2)
+    ax2.set_ylabel(y2)
+    ax2.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0)
+
+    plt.tight_layout()
+    plt.show()
+
+#####################################################
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def doble_grafico_bivariado(df,x1,y1,x2,y2,titulo="Bivariado: Comparaciones en 2 Subplots"):
+    """
+    Realiza dos comparaciones bivariadas (scatterplot) en una sola fila, con 2 subplots:
+    
+    - Subplot 1: df[x1] vs. df[y1]
+    - Subplot 2: df[x2] vs. df[y2]
+
+    Parámetros:
+    -----------
+    df    : pd.DataFrame
+        DataFrame con las columnas a analizar.
+    x1, y1: str
+        Nombres de las columnas para el 1er scatterplot.
+    x2, y2: str
+        Nombres de las columnas para el 2do scatterplot.
+    titulo: str
+        Título global de la figura.
+    """
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(11, 3))
+    fig.suptitle(titulo, fontweight='bold', fontsize=14)
+
+    # ----- Subplot 1 -----
+    sns.scatterplot(
+        data=df,
+        x=x1,
+        y=y1,
+        alpha=0.7,
+        color="blue",
+        ax=ax1
+    )
+    ax1.set_title(f"{x1} vs {y1}", fontweight='bold')
+    ax1.set_xlabel(x1)
+    ax1.set_ylabel(y1)
+
+    # ----- Subplot 2 -----
+    sns.scatterplot(
+        data=df,
+        x=x2,
+        y=y2,
+        alpha=0.7,
+        color="red",
+        ax=ax2
+    )
+    ax2.set_title(f"{x2} vs {y2}", fontweight='bold')
+    ax2.set_xlabel(x2)
+    ax2.set_ylabel(y2)
+
+    plt.tight_layout()
+    plt.show()
+
+#######################################################
+
 import pandas as pd
 
 def generar_diccionario_tipos(df_dict, sheet_name):
