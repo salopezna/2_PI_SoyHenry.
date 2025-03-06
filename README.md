@@ -25,53 +25,25 @@ La industria de las telecomunicaciones ha desempeñado un papel crucial en nuest
   - **Matplotlib/Seaborn**: Visualización de datos.
 - **Control de Versiones:** Git y GitHub
 
-### **Estructura del Proyecto**
-
-- `notebooks/`: Contiene los notebooks de ETL (`etl.ipynb`) y EDA (`eda.ipynb`).
-- `data/`:  
-  - `raw/`: Datos originales (Excel).
-  - `processed/`: Datos transformados.
-- `functions/`: Funciones reutilizables para el proceso ETL y EDA.
-- `requirements.txt`: Dependencias del proyecto.
-
-# Estructura del Proyecto
-
----
 ```markdown
 # Estructura del Proyecto
 
 mvp_pi2/
 │
-├── 📁 data/                    # 📂 Datos crudos y procesados
+├── 📁 data/                    # 📂 Carpeta para almacenamiento general de los datos
 │   ├── 📁 raw/                 # 📄 Datos originales (sin modificar)
 │   ├── 📁 processed/           # 📄 Datos limpios y listos para análisis
-│   └── 📁 external/            # 📄 Datos externos o de terceros
 │
-├── 01_ETL.ipynb            # 📊 Notebook para Exploración, Transformación y Carga inicial
-├── 02_EDA.ipynb            # 📊 Notebook para Análisis exploratorio inicial   └── 02_EDA.ipynb            
+├── 📁 virtualenv/              # 📂 Carpeta para almacenamiento de la data del entorno virtual
+├── ETL.ipynb                   # 📊 Notebook para Exploración, Transformación y Carga inicial
+├── EDA.ipynb                   # 📊 Notebook para Análisis exploratorio            
 │
-├── 📁 src/                     # 🐍 Código fuente del proyecto
-│   └── preprocess_data.py      # 📄 Funciones para cargar, transformación y limpieza de datos
-│   └── build_features.py       # 📄 Creación y selección de variables
-│   ├── evatrain_model.py       # 📄 Evaluación y Entrenamiento del modelo
-│   └── visualize.py            # 📄 Funciones para visualización de gráficos y dashboards
+├── functions.py                # 📄 Compendio de Funciones usadas en el ETL y EDA
 │
-├── 📁 models/                  # 🧠 Modelos entrenados y artefactos serializados
-│   └── modelo_final.pkl        # 💾 Modelo entrenado
-│
-├── 📁 reports/                 # 📝 Reportes y resultados del proyecto
-│   └── 📁 figures/             # 📊 Gráficos y visualizaciones
-│
-├── 📁 tests/                   # 🧪 Pruebas unitarias del código
-│   └── test_data.py
-│
-├── 📁 docs/                    # 📖 Documentación adicional
-│
-├── requirements.txt            # 📋 Lista de dependencias
-├── environment.yml             # 📋 Configuración del entorno Conda (opcional)
+├── requirements.txt            # 📋 Lista de librerias y dependencias requeridas
 ├── .gitignore                  # 🚫 Archivos/carpetas a ignorar en Git
 ├── README.md                   # 📖 Descripción general del proyecto
-└── main.py                     # 🏁 Script principal para ejecutar el pipeline
+└── Dashboard_KPI_PI_2.pbix     # 📊 Archivo de Power BI con el Dashboard
 ---
 1. **Clonar el repositorio:**
 
